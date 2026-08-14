@@ -2,19 +2,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import { accountTypeLabel, type Account } from '@/lib/accounts'
+import { formatCurrency } from '@/lib/currency'
 import { deleteAccount } from './actions'
 import { AddAccountToggle } from './add-account-toggle'
-
-function formatBalance(amount: number, currency: string) {
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency,
-    }).format(amount)
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`
-  }
-}
 
 export default async function AccountsPage() {
   const supabase = await createClient()
@@ -70,7 +60,7 @@ export default async function AccountsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-neutral-900">
-                    {formatBalance(account.starting_balance, account.currency)}
+                    {formatCurrency(account.starting_balance, account.currency)}
                   </span>
                   <form action={deleteAccount}>
                     <input type="hidden" name="id" value={account.id} />

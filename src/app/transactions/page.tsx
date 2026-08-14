@@ -3,19 +3,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import type { Category, Transaction, TransactionAccount } from '@/lib/transactions'
+import { formatCurrency } from '@/lib/currency'
 import { deleteTransaction } from './actions'
 import { TransactionForm } from './transaction-form'
-
-function formatAmount(amount: number, currency: string) {
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency,
-    }).format(amount)
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`
-  }
-}
 
 function formatDate(isoDate: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -116,7 +106,7 @@ export default async function TransactionsPage() {
                     }`}
                   >
                     {t.direction === 'in' ? '+' : '−'}
-                    {formatAmount(t.amount, t.currency)}
+                    {formatCurrency(t.amount, t.currency)}
                   </span>
                   <form action={deleteTransaction}>
                     <input type="hidden" name="id" value={t.id} />
