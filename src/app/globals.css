@@ -1,26 +1,291 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ═══════════════════════════════════════════════════════════════
+   Chit design tokens — the source of truth for color, type, space,
+   radius and shadow. Every component below reads from these
+   variables; never hard-code a hex or px value they already carry.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+   Ported from the Chit visual identity export (built on the
+   "Classical" token system), with two corrections agreed with the
+   user: a single brass accent (#b8935a) used identically in light
+   and dark mode — the export's light-mode ramp shipped a slightly
+   different #b68235 — and the accent-2 role consolidated into
+   accent, since the design system's own readme calls accent-2 "a
+   machine-derived stand-in kept only so both sets resolve... treat
+   them as one role."
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201f1d;
+  --color-accent: #b8935a;
+  --color-divider: color-mix(in srgb, #201f1d 16%, transparent);
+
+  /* Negative amounts are a deliberate ledger quirk: plain ink in
+     light mode, only turning red in dark mode (see below). */
+  --color-negative: var(--color-text);
+
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+
+  --color-accent-100: #fff3e4;
+  --color-accent-200: #ffe3bf;
+  --color-accent-300: #facb8d;
+  --color-accent-400: #e1ad66;
+  --color-accent-500: #c28d41;
+  --color-accent-600: #a06f24;
+  --color-accent-700: #7d5411;
+  --color-accent-800: #5a3b0a;
+  --color-accent-900: #3a270d;
+
+  /* accent-2 consolidated into accent (see note above) */
+  --color-accent-2-100: var(--color-accent-100);
+  --color-accent-2-200: var(--color-accent-200);
+  --color-accent-2-300: var(--color-accent-300);
+  --color-accent-2-400: var(--color-accent-400);
+  --color-accent-2-500: var(--color-accent-500);
+  --color-accent-2-600: var(--color-accent-600);
+  --color-accent-2-700: var(--color-accent-700);
+  --color-accent-2-800: var(--color-accent-800);
+  --color-accent-2-900: var(--color-accent-900);
+
+  --font-heading: var(--font-cormorant), Georgia, serif;
+  --font-heading-weight: 600;
+  --font-body: var(--font-lora), Georgia, serif;
+
+  --space-1: 4.6px;
+  --space-2: 9.2px;
+  --space-3: 13.8px;
+  --space-4: 18.4px;
+  --space-6: 27.6px;
+  --space-8: 36.8px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 7px;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-bg: #1a1714;
+    --color-surface: #221e19;
+    --color-text: #f0ead6;
+    --color-accent: #b8935a;
+    --color-accent-400: #b8935a;
+    --color-accent-700: #d9b888;
+    --color-accent-800: #f0dec0;
+    --color-accent-100: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg));
+    --color-accent-2-100: var(--color-accent-100);
+    --color-accent-2-800: var(--color-accent-800);
+    --color-divider: #3a3a36;
+    --color-neutral-100: #221e19;
+    --color-neutral-200: #2b2620;
+    --color-neutral-800: #d8d3c9;
+    --color-negative: #e28787;
   }
 }
 
+@keyframes chitShimmer {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+@keyframes chitPulseRing {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 22%, transparent); }
+  70% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--color-accent) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 0%, transparent); }
+}
+
+/* Expose the tokens as Tailwind utilities (bg-bg, text-accent, etc.)
+   for one-off composition, on top of the component classes below. */
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-text: var(--color-text);
+  --color-accent: var(--color-accent);
+  --color-divider: var(--color-divider);
+  --color-negative: var(--color-negative);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Base
+   ═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 400;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-2);
+}
+h1 { font-size: 42px; }
+h2 { font-size: 32px; }
+h3 { font-size: 25px; }
+h4 { font-size: 20px; }
+h5 { font-size: 16px; }
+h6 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+.hr {
+  height: 1px; border: 0; margin: var(--space-4) 0;
+  background: var(--color-divider);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Components — ported from the Chit export's component layer.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { color: var(--color-accent); border-color: var(--color-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.btn-primary:active { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-block { width: 100%; }
+
+/* — forms — */
+.field > label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: transparent;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+textarea.input { min-height: 90px; resize: vertical; font-family: inherit; }
+.seg {
+  display: inline-flex; overflow: hidden;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+}
+.seg-opt input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+a.seg-opt[aria-current="page"] { color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+a.seg-opt:not([aria-current="page"]):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+
+/* — cards — */
+.card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-md);
+  background: transparent; border: 1px solid var(--color-divider);
+}
+.card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+.card-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 17px; line-height: 1.2;
+}
+.card-body { margin: 0; font-size: 13px; opacity: 0.8; flex: 1; }
+.card-meta {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+  border: 1px solid transparent; font-family: var(--font-body);
+  background: transparent;
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+.tag-outline { border-color: var(--color-accent); color: var(--color-accent); }
+/* Interactive variant — the category picker uses real <button class="tag">
+   elements, toggling between tag-accent (selected) and tag-outline. */
+button.tag { cursor: pointer; }
+button.tag:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+button.tag-outline:hover { background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
+
+/* — navigation — */
+.nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+}
+.nav-brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 18px; margin-right: auto;
+}
+.nav a { color: inherit; text-decoration: none; font-size: 14px; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+
+/* — ledger row — the signature device: an icon, a label, a dotted
+   leader, a tabular figure. One shared class standing in for the
+   repeated inline-styled rows in the source mockup. */
+.ledger-row { display: flex; align-items: baseline; gap: 8px; }
+.ledger-row .leader {
+  flex: 1; border-bottom: 1px dotted var(--color-divider);
+  height: 1px; align-self: end; margin-bottom: 4px;
+}
+a.ledger-row, button.ledger-row {
+  padding: 6px 4px; margin: -6px -4px; border-radius: var(--radius-sm);
+  width: 100%; text-align: left; background: transparent; border: 0;
+  cursor: pointer; font: inherit; color: inherit;
+}
+a.ledger-row:hover, button.ledger-row:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+a.ledger-row:active, button.ledger-row:active {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
 }

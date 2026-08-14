@@ -85,50 +85,37 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
   const expenseCategories = (categories ?? []).filter((c) => c.kind === 'expense')
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-(--color-bg)">
       <AppHeader email={user.email ?? ''} active="/transactions" />
 
-      <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
+      <div className="mx-auto max-w-2xl space-y-6 px-5 py-8">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Transactions</h1>
-          <p className="text-sm text-neutral-500">
+          <h2>Transactions</h2>
+          <p className="text-sm text-muted">
             Log money moving in or out of any of your accounts.
           </p>
         </div>
 
         {accounts && accounts.length > 0 ? (
-          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="rounded-(--radius-md) border border-(--color-divider) p-4.5">
             <TransactionForm accounts={accounts} categories={categories ?? []} />
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-6 text-center">
-            <p className="text-sm text-neutral-600">
+          <div className="rounded-(--radius-md) border border-dashed border-(--color-divider) p-6 text-center">
+            <p className="text-sm text-muted">
               You need an account before you can log a transaction.
             </p>
-            <Link
-              href="/accounts"
-              className="mt-2 inline-block text-sm font-medium text-neutral-900 underline"
-            >
+            <Link href="/accounts" className="btn btn-ghost mt-2">
               Add your first account →
             </Link>
           </div>
         )}
 
         {accounts && accounts.length > 0 && (
-          <form
-            method="GET"
-            className="flex flex-wrap items-end gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
-          >
-            <div className="space-y-1">
-              <label htmlFor="accountId" className="text-xs font-medium text-neutral-700">
-                Account
-              </label>
-              <select
-                id="accountId"
-                name="accountId"
-                defaultValue={accountFilter ?? ''}
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-neutral-500"
-              >
+          <form method="GET" className="flex flex-wrap items-end gap-3 rounded-(--radius-md) border border-(--color-divider) p-4">
+            <div className="field">
+              <label htmlFor="accountId">Account</label>
+              <select id="accountId" name="accountId" defaultValue={accountFilter ?? ''} className="input">
                 <option value="">All accounts</option>
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -138,16 +125,9 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="categoryId" className="text-xs font-medium text-neutral-700">
-                Category
-              </label>
-              <select
-                id="categoryId"
-                name="categoryId"
-                defaultValue={categoryFilter ?? ''}
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-neutral-500"
-              >
+            <div className="field">
+              <label htmlFor="categoryId">Category</label>
+              <select id="categoryId" name="categoryId" defaultValue={categoryFilter ?? ''} className="input">
                 <option value="">All categories</option>
                 <optgroup label="Income">
                   {incomeCategories.map((c) => (
@@ -166,43 +146,21 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="from" className="text-xs font-medium text-neutral-700">
-                From
-              </label>
-              <input
-                id="from"
-                name="from"
-                type="date"
-                defaultValue={fromFilter ?? ''}
-                className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-neutral-500"
-              />
+            <div className="field">
+              <label htmlFor="from">From</label>
+              <input id="from" name="from" type="date" defaultValue={fromFilter ?? ''} className="input" />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="to" className="text-xs font-medium text-neutral-700">
-                To
-              </label>
-              <input
-                id="to"
-                name="to"
-                type="date"
-                defaultValue={toFilter ?? ''}
-                className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-neutral-500"
-              />
+            <div className="field">
+              <label htmlFor="to">To</label>
+              <input id="to" name="to" type="date" defaultValue={toFilter ?? ''} className="input" />
             </div>
 
-            <button
-              type="submit"
-              className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700"
-            >
+            <button type="submit" className="btn btn-primary">
               Filter
             </button>
             {hasFilters && (
-              <Link
-                href="/transactions"
-                className="text-sm text-neutral-500 underline hover:text-neutral-900"
-              >
+              <Link href="/transactions" className="btn btn-ghost">
                 Clear
               </Link>
             )}
@@ -210,31 +168,31 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
         )}
 
         {error && (
-          <p className="text-sm text-red-600" role="alert">
+          <p className="text-sm text-(--color-negative)" role="alert">
             Couldn&apos;t load transactions: {error.message}
           </p>
         )}
 
         {transactions && transactions.length > 0 ? (
-          <ul className="space-y-2">
+          <ul className="flex flex-col">
             {transactions.map((t) => (
               <li
                 key={t.id}
-                className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
+                className="flex items-start justify-between gap-3 border-b border-(--color-divider) py-3 last:border-b-0"
               >
                 <div>
-                  <p className="text-sm font-medium text-neutral-900">
+                  <p className="text-[13px]">
                     {t.categories?.name ?? 'Uncategorized'}
                     {t.note ? ` · ${t.note}` : ''}
                   </p>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-[11px] text-muted">
                     {t.accounts?.name ?? 'Unknown account'} · {formatDate(t.occurred_on)}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-none items-center gap-3">
                   <span
-                    className={`text-sm font-medium ${
-                      t.direction === 'in' ? 'text-green-700' : 'text-neutral-900'
+                    className={`whitespace-nowrap text-[13px] [font-variant-numeric:tabular-nums] ${
+                      t.direction === 'out' ? 'text-(--color-negative)' : ''
                     }`}
                   >
                     {t.direction === 'in' ? '+' : '−'}
@@ -245,7 +203,7 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
                     <button
                       type="submit"
                       aria-label="Delete transaction"
-                      className="text-xs text-neutral-400 hover:text-red-600"
+                      className="text-[11px] text-muted hover:text-(--color-negative)"
                     >
                       Delete
                     </button>
@@ -256,7 +214,7 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
           </ul>
         ) : (
           hasFilters && (
-            <p className="rounded-xl border border-dashed border-neutral-300 bg-white p-6 text-center text-sm text-neutral-500">
+            <p className="rounded-(--radius-md) border border-dashed border-(--color-divider) p-6 text-center text-sm text-muted">
               No transactions match these filters.
             </p>
           )

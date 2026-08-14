@@ -2,14 +2,16 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
-import { accountTypeLabel } from '@/lib/accounts'
+import { AccountIcon } from '@/components/account-icon'
+import { BalanceRing } from '@/components/balance-ring'
+import type { AccountType } from '@/lib/accounts'
 import { formatCurrency } from '@/lib/currency'
 import { BASE_CURRENCY, convertToBase, getExchangeRates } from '@/lib/fx'
 
 type AccountRow = {
   id: string
   name: string
-  type: string
+  type: AccountType
   provider: string | null
   currency: string
   starting_balance: number
@@ -50,19 +52,29 @@ export default async function DashboardPage() {
 
   if (!accounts || accounts.length === 0) {
     return (
-      <div className="min-h-screen bg-neutral-50">
+      <div className="min-h-screen bg-(--color-bg)">
         <AppHeader email={user.email ?? ''} active="/dashboard" />
-        <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
-          <h1 className="text-xl font-semibold text-neutral-900">Dashboard</h1>
-          <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-6 text-center">
-            <p className="text-sm text-neutral-600">
-              Add an account to start seeing balances here.
-            </p>
-            <Link
-              href="/accounts"
-              className="mt-2 inline-block text-sm font-medium text-neutral-900 underline"
+        <div className="mx-auto max-w-2xl px-4 py-10">
+          <div className="flex flex-col items-center gap-2.5 rounded-(--radius-lg) border border-(--color-divider) bg-(--color-surface) px-6 py-10 text-center">
+            <svg
+              width="30"
+              height="30"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="opacity-50"
             >
-              Add your first account →
+              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+            </svg>
+            <h4 className="mt-1">No accounts yet</h4>
+            <p className="max-w-[260px] text-xs text-muted">
+              Add your first mobile wallet, bank account or card to see where your money sits.
+            </p>
+            <Link href="/accounts" className="btn btn-primary mt-1.5">
+              Add account
             </Link>
           </div>
         </div>
@@ -86,15 +98,24 @@ export default async function DashboardPage() {
     balance: a.starting_balance + (netByAccount.get(a.id) ?? 0),
   }))
 
+  // "Total balance" is a net-worth figure, so cards (a liability — what's
+  // owed, not held) are excluded; everything else (bank, mobile money,
+  // cash, other) counts as an asset. Cards still show in the per-account
+  // list below, balance and all.
+  const assetAccounts = accountBalances.filter((a) => a.type !== 'card')
+
   // Only convert to a base currency when more than one currency is
-  // actually in use — a single-currency user never needs the FX call.
-  const distinctCurrencies = new Set(accounts.map((a) => a.currency))
+  // actually in use among asset accounts — a single-currency user never
+  // needs the FX call.
+  const distinctCurrencies = new Set(assetAccounts.map((a) => a.currency))
   let total: { amount: number; currency: string; unconverted: number } | null = null
 
-  if (distinctCurrencies.size <= 1) {
+  if (distinctCurrencies.size === 0) {
+    total = { amount: 0, currency: BASE_CURRENCY, unconverted: 0 }
+  } else if (distinctCurrencies.size === 1) {
     const [currency] = distinctCurrencies
     total = {
-      amount: accountBalances.reduce((sum, a) => sum + a.balance, 0),
+      amount: assetAccounts.reduce((sum, a) => sum + a.balance, 0),
       currency,
       unconverted: 0,
     }
@@ -103,7 +124,7 @@ export default async function DashboardPage() {
     if (rates) {
       let sum = 0
       let unconverted = 0
-      for (const a of accountBalances) {
+      for (const a of assetAccounts) {
         const converted = convertToBase(a.balance, a.currency, rates)
         if (converted === null) {
           unconverted += 1
@@ -149,99 +170,93 @@ export default async function DashboardPage() {
   const spendCurrencyLabel = spendNeedsConversion ? BASE_CURRENCY : [...spendCurrencies][0]
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-(--color-bg)">
       <AppHeader email={user.email ?? ''} active="/dashboard" />
 
-      <div className="mx-auto max-w-2xl space-y-8 px-4 py-10">
-        <h1 className="text-xl font-semibold text-neutral-900">Dashboard</h1>
-
-        <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-neutral-500">Total balance</p>
-          {total ? (
-            <>
-              <p className="mt-1 text-4xl font-semibold text-neutral-900">
+      <div className="mx-auto flex max-w-2xl flex-col">
+        <div className="flex flex-col items-center gap-1.5 border-b border-(--color-divider) px-5 pt-7 pb-5">
+          <BalanceRing>
+            <span className="text-[10px] tracking-[0.12em] uppercase text-(--color-accent-700)">
+              Total balance
+            </span>
+            {total ? (
+              <span className="font-(family-name:--font-heading) text-[30px] font-semibold [font-variant-numeric:tabular-nums]">
                 {formatCurrency(total.amount, total.currency)}
-              </p>
-              {distinctCurrencies.size > 1 && (
-                <p className="mt-1 text-xs text-neutral-400">
-                  Converted to {BASE_CURRENCY} using daily exchange rates
-                  {total.unconverted > 0
-                    ? ` · ${total.unconverted} account${total.unconverted > 1 ? 's' : ''} not included (unsupported currency)`
-                    : ''}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-neutral-500">
-              Exchange rates are unavailable right now, so we can&apos;t combine
-              your {distinctCurrencies.size} currencies into one total. See
-              balances per account below.
-            </p>
-          )}
+              </span>
+            ) : (
+              <span className="font-(family-name:--font-heading) text-[26px] font-semibold opacity-40">
+                &mdash;
+              </span>
+            )}
+            <span className="text-[10px] text-muted">
+              {assetAccounts.length} asset account{assetAccounts.length === 1 ? '' : 's'}
+            </span>
+          </BalanceRing>
+          <p className="mt-2 text-[11px] text-muted">
+            {total === null
+              ? "Exchange rates are unavailable, so we can't total your currencies right now."
+              : distinctCurrencies.size > 1
+                ? `Converted to ${BASE_CURRENCY} at today's rates${
+                    total.unconverted > 0
+                      ? ` · ${total.unconverted} account${total.unconverted > 1 ? 's' : ''} not included`
+                      : ''
+                  }`
+                : 'Across your asset accounts'}
+          </p>
         </div>
 
-        <div>
-          <h2 className="mb-3 text-sm font-semibold text-neutral-900">
-            Balance per account
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="border-b border-(--color-divider) px-5 py-5">
+          <h6 className="mb-3.5 opacity-60">Accounts</h6>
+          <div className="flex flex-col gap-1">
             {accountBalances.map((a) => (
-              <div
-                key={a.id}
-                className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
-              >
-                <p className="truncate text-sm font-medium text-neutral-900">
-                  {a.name}
-                </p>
-                <p className="text-xs text-neutral-500">
-                  {accountTypeLabel(a.type)}
-                  {a.provider ? ` · ${a.provider}` : ''}
-                </p>
-                <p className="mt-2 text-lg font-semibold text-neutral-900">
+              <Link key={a.id} href={`/transactions?accountId=${a.id}`} className="ledger-row">
+                <AccountIcon type={a.type} className="flex-none text-(--color-accent-700)" />
+                <span className="whitespace-nowrap text-[13px]">{a.name}</span>
+                <span className="leader" />
+                <span
+                  className={`whitespace-nowrap text-[13px] [font-variant-numeric:tabular-nums] ${
+                    a.balance < 0 ? 'text-(--color-negative)' : ''
+                  }`}
+                >
                   {formatCurrency(a.balance, a.currency)}
-                </p>
-              </div>
+                </span>
+              </Link>
             ))}
           </div>
         </div>
 
-        <div>
-          <h2 className="mb-1 text-sm font-semibold text-neutral-900">
-            Spend by category
-          </h2>
-          <p className="mb-3 text-xs text-neutral-500">
-            This month
-            {spendNeedsConversion ? ` · converted to ${BASE_CURRENCY}` : ''}
-            {spendSkipped > 0
-              ? ` · ${spendSkipped} transaction${spendSkipped > 1 ? 's' : ''} not included (unsupported currency)`
-              : ''}
-          </p>
+        <div className="px-5 py-5">
+          <h6 className="mb-1 opacity-60">Spend this month</h6>
+          {spendSkipped > 0 && (
+            <p className="mb-2 text-[11px] text-muted">
+              {spendSkipped} transaction{spendSkipped > 1 ? 's' : ''} not included (unsupported
+              currency)
+            </p>
+          )}
 
           {spendRows.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-neutral-300 bg-white p-6 text-center text-sm text-neutral-500">
-              No spending recorded yet this month.
-            </p>
+            <p className="pt-2 text-sm text-muted">No spending recorded yet this month.</p>
           ) : (
-            <ul className="space-y-2 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-2.5 pt-2">
               {spendRows.map((row) => (
-                <li key={row.name} className="flex items-center gap-3">
-                  <span className="w-28 shrink-0 truncate text-sm text-neutral-700">
-                    {row.name}
-                  </span>
-                  <span className="flex-1">
-                    <span
-                      className="block h-4 rounded-full bg-[#2a78d6]"
+                <div key={row.name}>
+                  <div className="mb-1 flex justify-between text-xs">
+                    <span>{row.name}</span>
+                    <span className="[font-variant-numeric:tabular-nums]">
+                      {formatCurrency(row.amount, spendCurrencyLabel)}
+                    </span>
+                  </div>
+                  <div className="h-[3px] rounded-full bg-(--color-divider)">
+                    <div
+                      className="h-full rounded-full bg-(--color-accent)"
                       style={{
                         width: `${maxSpend > 0 ? Math.max((row.amount / maxSpend) * 100, 4) : 0}%`,
                       }}
                     />
-                  </span>
-                  <span className="w-24 shrink-0 text-right text-sm font-medium text-neutral-900 [font-variant-numeric:tabular-nums]">
-                    {formatCurrency(row.amount, spendCurrencyLabel)}
-                  </span>
-                </li>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>

@@ -17,31 +17,27 @@ export function AccountForm() {
   const isOtherCurrency = currency === 'Other'
 
   return (
-    <form action={formAction} className="space-y-4">
-      <div className="space-y-1">
-        <label htmlFor="name" className="text-sm font-medium text-neutral-700">
-          Account name
-        </label>
+    <form action={formAction} className="flex flex-col gap-3.5">
+      <div className="field">
+        <label htmlFor="name">Account name</label>
         <input
           id="name"
           name="name"
           type="text"
           required
           placeholder="e.g. Everyday M-Pesa, NBC Checking"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          className="input"
         />
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="type" className="text-sm font-medium text-neutral-700">
-          Type
-        </label>
+      <div className="field">
+        <label htmlFor="type">Type</label>
         <select
           id="type"
           name="type"
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          className="input"
         >
           {ACCOUNT_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -52,16 +48,14 @@ export function AccountForm() {
       </div>
 
       {isMobileMoney && (
-        <div className="space-y-1">
-          <label htmlFor="provider" className="text-sm font-medium text-neutral-700">
-            Provider
-          </label>
+        <div className="field">
+          <label htmlFor="provider">Provider</label>
           <select
             id="provider"
             name="provider"
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            className="input"
           >
             {MOBILE_MONEY_PROVIDERS.map((p) => (
               <option key={p} value={p}>
@@ -75,23 +69,21 @@ export function AccountForm() {
               type="text"
               required
               placeholder="Provider name"
-              className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+              className="input mt-2"
             />
           )}
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label htmlFor="currency" className="text-sm font-medium text-neutral-700">
-            Currency
-          </label>
+      <div className="flex gap-2.5">
+        <div className="field flex-1">
+          <label htmlFor="currency">Currency</label>
           <select
             id="currency"
             name="currency"
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            className="input"
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>
@@ -106,41 +98,32 @@ export function AccountForm() {
               required
               maxLength={3}
               placeholder="e.g. XOF"
-              className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm uppercase outline-none focus:border-neutral-500"
+              className="input mt-2 uppercase"
             />
           )}
         </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="startingBalance"
-            className="text-sm font-medium text-neutral-700"
-          >
-            Starting balance
-          </label>
+        <div className="field flex-1">
+          <label htmlFor="startingBalance">Starting balance</label>
           <input
             id="startingBalance"
             name="startingBalance"
             type="number"
             step="0.01"
             defaultValue="0"
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            className="input"
           />
         </div>
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-(--color-negative)" role="alert">
           {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
-      >
-        {pending ? 'Adding account…' : 'Add account'}
+      <button type="submit" disabled={pending} className="btn btn-primary btn-block">
+        {pending ? 'Saving…' : 'Save account'}
       </button>
     </form>
   )

@@ -21,6 +21,7 @@ export function TransactionForm({
   const [direction, setDirection] = useState<'in' | 'out'>('out')
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
 
   const [showPaste, setShowPaste] = useState(false)
   const [smsText, setSmsText] = useState('')
@@ -31,6 +32,17 @@ export function TransactionForm({
       categories.filter((c) => c.kind === (direction === 'in' ? 'income' : 'expense')),
     [categories, direction]
   )
+  const [categoryId, setCategoryId] = useState(filteredCategories[0]?.id ?? '')
+
+  function handleDirectionChange(next: 'in' | 'out') {
+    setDirection(next)
+    const nextCategories = categories.filter(
+      (c) => c.kind === (next === 'in' ? 'income' : 'expense')
+    )
+    setCategoryId(nextCategories[0]?.id ?? '')
+  }
+
+  const selectedAccount = accounts.find((a) => a.id === accountId)
 
   function handleParse() {
     const result = parseTransactionText(smsText)
@@ -40,7 +52,7 @@ export function TransactionForm({
       return
     }
 
-    if (result.direction) setDirection(result.direction)
+    if (result.direction) handleDirectionChange(result.direction)
     if (result.amount !== null) setAmount(String(result.amount))
     if (result.note) setNote(result.note)
 
@@ -53,90 +65,94 @@ export function TransactionForm({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3">
+    <div className="flex flex-col gap-4.5">
+      <div className="flex flex-col gap-2 border-t border-(--color-divider) pt-3.5">
         <button
           type="button"
           onClick={() => setShowPaste((v) => !v)}
-          className="text-sm font-medium text-neutral-700 hover:text-neutral-900"
+          className="self-start text-xs text-muted"
         >
-          {showPaste ? '− Paste from SMS/notification' : '+ Paste from SMS/notification'}
+          {showPaste ? '− Paste SMS or notification' : '+ Paste SMS or notification (optional)'}
         </button>
 
         {showPaste && (
-          <div className="mt-3 space-y-2">
+          <div className="flex flex-col gap-2">
             <textarea
               value={smsText}
               onChange={(e) => setSmsText(e.target.value)}
               rows={3}
               placeholder="Paste a mobile money confirmation message here…"
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+              className="input font-mono text-[11.5px]"
             />
-            <button
-              type="button"
-              onClick={handleParse}
-              disabled={!smsText.trim()}
-              className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 disabled:opacity-50"
-            >
-              Fill form from text
-            </button>
-            {parseFeedback && (
-              <p className="text-xs text-neutral-500">{parseFeedback}</p>
-            )}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-muted">
+                We&apos;ll prefill the amount and direction — you confirm the rest.
+              </span>
+              <button
+                type="button"
+                onClick={handleParse}
+                disabled={!smsText.trim()}
+                className="btn btn-ghost flex-none disabled:opacity-45"
+              >
+                Parse
+              </button>
+            </div>
+            {parseFeedback && <p className="text-[11px] text-muted">{parseFeedback}</p>}
           </div>
         )}
       </div>
 
-      <form action={formAction} className="space-y-4">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setDirection('out')}
-            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
-              direction === 'out'
-                ? 'border-neutral-900 bg-neutral-900 text-white'
-                : 'border-neutral-300 text-neutral-700 hover:bg-neutral-100'
-            }`}
-          >
-            Money out
-          </button>
-          <button
-            type="button"
-            onClick={() => setDirection('in')}
-            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
-              direction === 'in'
-                ? 'border-neutral-900 bg-neutral-900 text-white'
-                : 'border-neutral-300 text-neutral-700 hover:bg-neutral-100'
-            }`}
-          >
-            Money in
-          </button>
+      <form action={formAction} className="flex flex-col gap-4.5">
+        <div className="seg w-full">
+          <label className="seg-opt flex-1 justify-center gap-1.5">
+            <input
+              type="radio"
+              checked={direction === 'in'}
+              onChange={() => handleDirectionChange('in')}
+            />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="17" y1="7" x2="7" y2="17" />
+              <polyline points="17 17 7 17 7 7" />
+            </svg>
+            <span>Money in</span>
+          </label>
+          <label className="seg-opt flex-1 justify-center gap-1.5">
+            <input
+              type="radio"
+              checked={direction === 'out'}
+              onChange={() => handleDirectionChange('out')}
+            />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="7" y1="17" x2="17" y2="7" />
+              <polyline points="7 7 17 7 17 17" />
+            </svg>
+            <span>Money out</span>
+          </label>
         </div>
         <input type="hidden" name="direction" value={direction} />
 
-        <div className="space-y-1">
-          <label htmlFor="accountId" className="text-sm font-medium text-neutral-700">
-            Account
-          </label>
+        <div className="field">
+          <label htmlFor="accountId">Account</label>
           <select
             id="accountId"
             name="accountId"
             required
-            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            className="input"
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} ({a.currency})
+                {a.name} · {a.currency}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label htmlFor="amount" className="text-sm font-medium text-neutral-700">
-              Amount
-            </label>
+        <div className="field">
+          <label htmlFor="amount">Amount</label>
+          <div className="flex items-baseline gap-2 rounded-(--radius-md) border border-(--color-divider) px-3 py-2.5">
+            <span className="text-[13px] text-muted">{selectedAccount?.currency ?? ''}</span>
             <input
               id="amount"
               name="amount"
@@ -146,46 +162,43 @@ export function TransactionForm({
               required
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="occurredOn" className="text-sm font-medium text-neutral-700">
-              Date
-            </label>
-            <input
-              id="occurredOn"
-              name="occurredOn"
-              type="date"
-              required
-              defaultValue={todayIsoDate()}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+              className="w-full border-0 bg-transparent font-(family-name:--font-heading) text-[26px] font-semibold text-(--color-text) outline-none [font-variant-numeric:tabular-nums]"
             />
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="categoryId" className="text-sm font-medium text-neutral-700">
-            Category
-          </label>
-          <select
-            id="categoryId"
-            name="categoryId"
+        <div className="field">
+          <label htmlFor="occurredOn">Date</label>
+          <input
+            id="occurredOn"
+            name="occurredOn"
+            type="date"
             required
-            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-500"
-          >
-            {filteredCategories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            defaultValue={todayIsoDate()}
+            className="input"
+          />
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="note" className="text-sm font-medium text-neutral-700">
-            Note <span className="text-neutral-400">(optional)</span>
+        <div className="field">
+          <label>Category</label>
+          <div className="flex flex-wrap gap-2">
+            {filteredCategories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCategoryId(c.id)}
+                className={`tag ${c.id === categoryId ? 'tag-accent' : 'tag-outline'}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+          <input type="hidden" name="categoryId" value={categoryId} />
+        </div>
+
+        <div className="field">
+          <label htmlFor="note">
+            Note <span className="text-muted">(optional)</span>
           </label>
           <input
             id="note"
@@ -194,22 +207,18 @@ export function TransactionForm({
             placeholder="e.g. Weekly groceries"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            className="input"
           />
         </div>
 
         {state.error && (
-          <p className="text-sm text-red-600" role="alert">
+          <p className="text-sm text-(--color-negative)" role="alert">
             {state.error}
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
-        >
-          {pending ? 'Adding…' : 'Add transaction'}
+        <button type="submit" disabled={pending} className="btn btn-primary btn-block">
+          {pending ? 'Saving…' : 'Save entry'}
         </button>
       </form>
     </div>

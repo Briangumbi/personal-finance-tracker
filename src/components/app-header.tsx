@@ -15,35 +15,24 @@ export function AppHeader({
   active: string
 }) {
   return (
-    <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
-        <nav className="flex items-center gap-5">
-          <span className="text-sm font-semibold text-neutral-900">
-            Finance Tracker
-          </span>
+    <header className="nav">
+      <div className="mx-auto flex w-full max-w-2xl items-center gap-4">
+        <span className="nav-brand">Chit</span>
+        <nav className="flex items-center gap-4">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={
-                active === link.href
-                  ? 'text-sm font-medium text-neutral-900'
-                  : 'text-sm text-neutral-500 hover:text-neutral-900'
-              }
+              aria-current={active === link.href ? 'page' : undefined}
             >
               {link.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-neutral-500 sm:inline">
-            {email}
-          </span>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="hidden text-xs text-muted sm:inline">{email}</span>
           <form action={logout}>
-            <button
-              type="submit"
-              className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-            >
+            <button type="submit" className="btn btn-secondary">
               Log out
             </button>
           </form>
