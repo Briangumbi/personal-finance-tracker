@@ -4,6 +4,7 @@ import { logout } from '@/lib/supabase/actions'
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/accounts', label: 'Accounts' },
+  { href: '/transactions', label: 'Transactions' },
 ]
 
 export function AppHeader({
