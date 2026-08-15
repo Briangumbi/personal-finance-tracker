@@ -56,9 +56,11 @@ function monthsAgoFirstOfMonthIso(monthsBack: number) {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see middleware.ts for details) — claims.email matches user.email.
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   if (!user) {
     redirect('/login')

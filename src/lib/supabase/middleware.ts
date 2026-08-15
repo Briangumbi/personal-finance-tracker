@@ -27,9 +27,13 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT signature locally against Supabase's
+  // cached JWKS (this project uses asymmetric ES256 keys) instead of making
+  // a network round trip to the Auth server on every request like getUser()
+  // does — same verification guarantee, far less latency, since this
+  // middleware runs on nearly every request.
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   const { pathname } = request.nextUrl
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path))
