@@ -6,6 +6,33 @@ const ROWS = [
   { labelWidth: 50, valueWidth: 48, delay: 200 },
 ]
 
+const SPEND_ROWS = [
+  { labelWidth: 64, valueWidth: 48, fillWidth: 70, delay: 0 },
+  { labelWidth: 80, valueWidth: 44, fillWidth: 45, delay: 120 },
+  { labelWidth: 56, valueWidth: 40, fillWidth: 25, delay: 240 },
+]
+
+const TREND_BAR_HEIGHTS = [25, 55, 35, 70, 45, 60]
+
+function ShimmerBar({
+  width,
+  height = 9,
+  delay = 0,
+  className = '',
+}: {
+  width: number
+  height?: number
+  delay?: number
+  className?: string
+}) {
+  return (
+    <span
+      style={{ width, height, animationDelay: `${delay}ms` }}
+      className={`inline-block flex-none animate-[chitShimmer_1.5s_ease-in-out_infinite] rounded-[3px] bg-(--color-divider) ${className}`}
+    />
+  )
+}
+
 export default function DashboardLoading() {
   return (
     <div className="min-h-screen bg-(--color-bg)">
@@ -47,6 +74,49 @@ export default function DashboardLoading() {
               />
             </div>
           ))}
+        </div>
+
+        <div className="border-b border-(--color-divider) px-5 py-5">
+          <h6 className="mb-1 opacity-60">Spend this month</h6>
+          <div className="flex flex-col gap-2.5 pt-2">
+            {SPEND_ROWS.map((row, i) => (
+              <div key={i}>
+                <div className="mb-1 flex justify-between text-xs">
+                  <ShimmerBar width={row.labelWidth} delay={row.delay} />
+                  <ShimmerBar width={row.valueWidth} delay={row.delay + 100} />
+                </div>
+                <div className="h-[3px] rounded-full bg-(--color-divider) opacity-40">
+                  <div
+                    style={{ width: `${row.fillWidth}%`, animationDelay: `${row.delay}ms` }}
+                    className="h-full animate-[chitShimmer_1.5s_ease-in-out_infinite] rounded-full bg-(--color-divider)"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-5 py-5">
+          <h6 className="mb-1 opacity-60">Spend trend</h6>
+          <ShimmerBar width={92} height={9} className="mb-3" />
+          <div className="flex h-24 items-end gap-2 border-b border-(--color-divider)">
+            {TREND_BAR_HEIGHTS.map((h, i) => (
+              <div key={i} className="flex h-full flex-1 flex-col justify-end">
+                <div
+                  style={{ height: `${h}%`, animationDelay: `${i * 80}ms` }}
+                  className="mx-auto w-full max-w-6 animate-[chitShimmer_1.5s_ease-in-out_infinite] rounded-t-[4px] bg-(--color-divider)"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-2">
+            {TREND_BAR_HEIGHTS.map((_, i) => (
+              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                <ShimmerBar width={24} height={8} delay={i * 80} />
+                <ShimmerBar width={32} height={8} delay={i * 80 + 80} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
