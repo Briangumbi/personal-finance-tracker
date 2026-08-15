@@ -218,10 +218,15 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
               </li>
             ))}
           </ul>
+        ) : hasFilters ? (
+          <p className="rounded-(--radius-md) border border-dashed border-(--color-divider) p-6 text-center text-sm text-muted">
+            No transactions match these filters.
+          </p>
         ) : (
-          hasFilters && (
+          accounts &&
+          accounts.length > 0 && (
             <p className="rounded-(--radius-md) border border-dashed border-(--color-divider) p-6 text-center text-sm text-muted">
-              No transactions match these filters.
+              No transactions yet — add your first one above.
             </p>
           )
         )}

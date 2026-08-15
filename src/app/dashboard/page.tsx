@@ -382,37 +382,45 @@ export default async function DashboardPage() {
 
         <div className="px-5 py-5">
           <h6 className="mb-1 opacity-60">Spend trend</h6>
-          <p className="mb-3 text-[11px] text-muted">
-            Last 6 months
-            {trendNeedsConversion ? ` · converted to ${BASE_CURRENCY}` : ''}
-            {trendSkipped > 0
-              ? ` · ${trendSkipped} transaction${trendSkipped > 1 ? 's' : ''} not included`
-              : ''}
-          </p>
-          <div className="flex h-24 items-end gap-2 border-b border-(--color-divider)">
-            {trendRows.map((row) => (
-              <div key={row.key} className="flex h-full flex-1 flex-col justify-end">
-                <div
-                  className="mx-auto w-full max-w-6 rounded-t-[4px] bg-(--color-accent)"
-                  style={{
-                    height: `${
-                      maxTrend > 0 ? Math.max((row.amount / maxTrend) * 100, row.amount > 0 ? 4 : 0) : 0
-                    }%`,
-                  }}
-                />
+          {maxTrend === 0 ? (
+            <p className="pt-2 text-sm text-muted">No spending recorded in the last 6 months.</p>
+          ) : (
+            <>
+              <p className="mb-3 text-[11px] text-muted">
+                Last 6 months
+                {trendNeedsConversion ? ` · converted to ${BASE_CURRENCY}` : ''}
+                {trendSkipped > 0
+                  ? ` · ${trendSkipped} transaction${trendSkipped > 1 ? 's' : ''} not included`
+                  : ''}
+              </p>
+              <div className="flex h-24 items-end gap-2 border-b border-(--color-divider)">
+                {trendRows.map((row) => (
+                  <div key={row.key} className="flex h-full flex-1 flex-col justify-end">
+                    <div
+                      className="mx-auto w-full max-w-6 rounded-t-[4px] bg-(--color-accent)"
+                      style={{
+                        height: `${
+                          maxTrend > 0
+                            ? Math.max((row.amount / maxTrend) * 100, row.amount > 0 ? 4 : 0)
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-2 flex gap-2">
-            {trendRows.map((row) => (
-              <div key={row.key} className="flex-1 text-center">
-                <p className="text-[10px] text-muted">{row.label}</p>
-                <p className="text-[10px] [font-variant-numeric:tabular-nums]">
-                  {formatCurrency(row.amount, trendCurrencyLabel)}
-                </p>
+              <div className="mt-2 flex gap-2">
+                {trendRows.map((row) => (
+                  <div key={row.key} className="flex-1 text-center">
+                    <p className="text-[10px] text-muted">{row.label}</p>
+                    <p className="text-[10px] [font-variant-numeric:tabular-nums]">
+                      {formatCurrency(row.amount, trendCurrencyLabel)}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

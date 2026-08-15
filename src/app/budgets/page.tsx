@@ -95,6 +95,12 @@ export default async function BudgetsPage() {
           </ul>
         )}
 
+        {!error && budgets && budgets.length === 0 && (
+          <p className="rounded-(--radius-md) border border-dashed border-(--color-divider) p-6 text-center text-sm text-muted">
+            No budgets yet — set one below to get an alert when you&apos;re near a limit.
+          </p>
+        )}
+
         <AddBudgetToggle
           key={availableCategories.length}
           defaultOpen={!budgets || budgets.length === 0}
