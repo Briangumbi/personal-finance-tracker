@@ -1,71 +1,111 @@
-# Personal Finance Tracker
+# Chit
 
-A personal finance tracker built for anyone worldwide — first-class support for
-mobile money accounts (M-Pesa, Tigo Pesa, Airtel Money, etc.) alongside
-traditional bank/card accounts, not just the latter.
+A passbook-style personal finance tracker — one line per account, first-class support for mobile money wallets (M-Pesa, Tigo Pesa, Airtel Money, and more) alongside banks, cards, and cash, not bolted on as an afterthought.
 
-## Stack
+## Live demo
 
-- Next.js (App Router) + Tailwind
-- Supabase (Postgres + Auth) — free tier
-- Vercel — free tier hosting
+*(add your deployed URL here once it's live — e.g. `chit.vercel.app`)*
+
+## Preview
+
+<!--
+  Drop screenshots into /docs with these filenames and they'll show up here
+  automatically:
+  - screenshot-dashboard.png  (balance ring + spend trend)
+  - screenshot-accounts.png   (multi-wallet account list)
+  - screenshot-transactions.png (SMS-paste transaction entry)
+  - screenshot-budgets.png    (budget list + dashboard alert)
+-->
+
+![Dashboard](./docs/screenshot-dashboard.png)
+
+| | |
+|---|---|
+| ![Accounts](./docs/screenshot-accounts.png) | ![Transactions](./docs/screenshot-transactions.png) |
+| ![Budgets](./docs/screenshot-budgets.png) | |
+
+## Features
+
+- **Every wallet in one place** — bank, card, mobile money, or cash, each with its own currency, shown as a single running balance
+- **Paste a mobile money SMS, skip the typing** — drop in a confirmation text and the amount, direction, fee, and counterparty prefill automatically
+- **Budgets that actually alert you** — set a monthly limit per category and get a dashboard banner the moment you're near or over it
+- **Spend trends without spreadsheets** — a 6-month spend chart and current-month category breakdown, computed live from your transactions
+- **Multi-currency net worth** — hold accounts in more than one currency and your total balance converts to a single figure automatically
+- **Privacy by default** — your total balance is blurred until you tap to reveal it, and re-hides itself if you switch away
+- **Locked down at the database, not just the app** — every table is scoped to its owning user with row-level security; there's no query path that can leak one user's data to another
+
+## How to use
+
+1. Sign up and confirm your email
+2. Add your first account — bank, mobile money, card, or cash
+3. Log transactions by typing them in, or paste a mobile money SMS and let it prefill
+4. Set a monthly budget per category to get alerted when you're close to the limit
+5. Check the dashboard for your balance, spend trend, and category breakdown
+
+## Project structure
+
+```
+src
+├── app
+│   ├── accounts/          # multi-wallet account CRUD
+│   ├── api/health/        # Supabase keep-alive ping (see .github/workflows)
+│   ├── auth/confirm/      # email confirmation link handler
+│   ├── budgets/           # monthly budgets + alert logic
+│   ├── dashboard/         # balance ring, spend trend, category breakdown
+│   ├── login/, signup/    # auth pages
+│   ├── privacy/, terms/   # plain-language legal pages
+│   ├── transactions/      # transaction entry + SMS-paste parser
+│   ├── icon.svg, apple-icon.tsx  # app icon
+│   └── globals.css        # design tokens (Tailwind v4 @theme)
+├── components/            # shared UI: header, balance ring, icons
+├── lib/
+│   ├── sms-parser.ts      # parses mobile money confirmation text
+│   ├── fx.ts              # multi-currency conversion
+│   └── supabase/          # browser/server clients, auth middleware
+└── proxy.ts               # Next.js 16 middleware (route auth guard)
+```
+
+## Tech stack
+
+- [Next.js](https://nextjs.org) 16.3.1 (App Router, Server Actions, Turbopack)
+- [React](https://react.dev) 19.2.8
+- [Supabase](https://supabase.com) — Postgres + Auth, row-level security (`@supabase/supabase-js` 2.112.3, `@supabase/ssr` 0.12.4)
+- [Tailwind CSS](https://tailwindcss.com) 4
+- TypeScript 5
+- [open.er-api.com](https://www.exchangerate-api.com/) — free exchange-rate data for multi-currency conversion
 
 ## Setup
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Copy `.env.local.example` to `.env.local` and fill in your project's URL
-   and anon key (Project Settings → API):
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Create a Supabase project, then copy `.env.local.example` to `.env.local` and fill in the values from **Project Settings → API**:
 
    ```bash
    cp .env.local.example .env.local
    ```
 
-3. Run the schema migration against your Supabase project. Easiest path:
-   open the Supabase Dashboard → SQL Editor, paste the contents of
-   [`supabase/migrations/0001_init_schema.sql`](supabase/migrations/0001_init_schema.sql),
-   and run it. (Or use the [Supabase CLI](https://supabase.com/docs/guides/cli)
-   if you have it installed: `supabase db push`.)
-4. In Supabase Dashboard → Authentication → URL Configuration, add
-   `http://localhost:3000/auth/confirm` as a redirect URL (and your production
-   URL once deployed).
-5. Install dependencies and start the dev server:
+3. Apply the database schema: open the Supabase SQL Editor and run, in order, everything under `supabase/migrations/`.
+
+4. In Supabase Dashboard → Authentication → URL Configuration, add `http://localhost:3000/auth/confirm` as a redirect URL (and your production URL once deployed).
+
+5. Run the dev server:
 
    ```bash
-   npm install
    npm run dev
    ```
 
-6. Open [http://localhost:3000](http://localhost:3000). You'll land on
-   `/login`; use "Sign up" to create an account, confirm via the email
-   Supabase sends, then log in.
+## Data model
 
-## What's built so far
+- `accounts` — one row per wallet: type (`bank` / `card` / `mobile_money` / `cash` / `other`), a free-text `provider` for mobile money, currency, and starting balance.
+- `categories` — shared defaults (income/expense) plus per-user custom categories.
+- `transactions` — amount, currency, direction, category, optional fee and counterparty, scoped to one account.
+- `budgets` — a monthly spending limit per category, compared against the current month's transactions to drive dashboard alerts.
 
-- Email/password auth (signup, login, logout, email confirmation) via
-  Supabase Auth, using `@supabase/ssr` for cookie-based sessions.
-- Route protection via `src/proxy.ts` (Next.js 16's replacement for
-  `middleware.ts`) — unauthenticated users are redirected to `/login`,
-  logged-in users are redirected away from `/login`/`/signup`.
-- Database schema (`supabase/migrations/0001_init_schema.sql`): `accounts`
-  (flexible type: bank / card / mobile_money / cash / other, with a free-text
-  `provider` field for mobile money), `categories` (shared defaults + custom
-  per-user), and `transactions` — all with row level security scoping every
-  row to its owning user.
-- A placeholder `/dashboard` page confirming the logged-in user's email.
-
-Not built yet: account setup UI, transaction entry, the SMS-paste parser, and
-the dashboard/history views.
-
-## Learn More
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Supabase Documentation](https://supabase.com/docs)
-
-## Deploy on Vercel
-
-The easiest way to deploy is the [Vercel Platform](https://vercel.com/new).
-Set the same environment variables from `.env.local` in your Vercel project
-settings, and update `NEXT_PUBLIC_SITE_URL` to your production URL.
+Row-level security is enabled on every table, scoping every row to `auth.uid()`; see `supabase/migrations/` for the exact policies.
 
 ## License
 
