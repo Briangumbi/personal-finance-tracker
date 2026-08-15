@@ -36,6 +36,12 @@ type TrendTxnRow = {
   currency: string
 }
 
+type BudgetRow = {
+  id: string
+  limit_amount: number
+  categories: { name: string } | null
+}
+
 function firstOfMonthIso() {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
@@ -185,6 +191,31 @@ export default async function DashboardPage() {
   const maxSpend = spendRows[0]?.amount ?? 0
   const spendCurrencyLabel = spendNeedsConversion ? BASE_CURRENCY : [...spendCurrencies][0]
 
+  // Budget alerts — reads from the spendByCategory map already built above,
+  // never recomputes or forks it. Only "monthly" budgets exist today, and
+  // spendByCategory is already scoped to the current month, so no extra
+  // date filtering is needed here.
+  const { data: budgets } = await supabase
+    .from('budgets')
+    .select('id, limit_amount, categories (name)')
+    .eq('period', 'monthly')
+    .returns<BudgetRow[]>()
+
+  const budgetAlerts = (budgets ?? [])
+    .filter((b) => b.categories)
+    .map((b) => {
+      const spent = spendByCategory.get(b.categories!.name) ?? 0
+      return {
+        id: b.id,
+        categoryName: b.categories!.name,
+        limit: b.limit_amount,
+        spent,
+        percent: b.limit_amount > 0 ? (spent / b.limit_amount) * 100 : 0,
+      }
+    })
+    .filter((b) => b.percent >= 80)
+    .sort((a, b) => b.percent - a.percent)
+
   // Spend trend — last 6 months, independent of the current-month query
   // above. Same "out only" scope as spend-by-category, just grouped by
   // month instead of category.
@@ -238,6 +269,27 @@ export default async function DashboardPage() {
       <AppHeader email={user.email ?? ''} active="/dashboard" />
 
       <div className="mx-auto flex max-w-2xl flex-col">
+        {budgetAlerts.length > 0 && (
+          <div className="border-b border-(--color-divider) bg-(--color-surface) px-5 py-4">
+            <h6 className="mb-2 opacity-60">Budget alerts</h6>
+            <ul className="flex flex-col gap-1.5">
+              {budgetAlerts.map((b) => (
+                <li key={b.id} className="flex items-center justify-between text-[13px]">
+                  <span>
+                    {b.categoryName}
+                    <span className="ml-1.5 text-(--color-negative)">
+                      {b.percent >= 100 ? 'over budget' : 'near budget'}
+                    </span>
+                  </span>
+                  <span className="text-(--color-negative) [font-variant-numeric:tabular-nums]">
+                    {formatCurrency(b.spent, spendCurrencyLabel)} / {formatCurrency(b.limit, spendCurrencyLabel)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="flex flex-col items-center gap-1.5 border-b border-(--color-divider) px-5 pt-7 pb-5">
           <BalanceRing>
             <span className="text-[10px] tracking-[0.12em] uppercase text-(--color-accent-700)">

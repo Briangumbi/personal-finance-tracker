@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/accounts', label: 'Accounts' },
   { href: '/transactions', label: 'Transactions' },
+  { href: '/budgets', label: 'Budgets' },
 ]
 
 export function AppHeader({
