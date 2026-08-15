@@ -16,9 +16,11 @@ export async function createAccount(
   formData: FormData
 ): Promise<AccountFormState> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see lib/supabase/middleware.ts for details).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   if (!user) {
     redirect('/login')
@@ -65,7 +67,7 @@ export async function createAccount(
   }
 
   const { error } = await supabase.from('accounts').insert({
-    user_id: user.id,
+    user_id: user.sub,
     name,
     type,
     provider,
@@ -84,9 +86,11 @@ export async function createAccount(
 
 export async function deleteAccount(formData: FormData) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see lib/supabase/middleware.ts for details).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   if (!user) {
     redirect('/login')

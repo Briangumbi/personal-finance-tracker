@@ -13,9 +13,11 @@ export async function createTransaction(
   formData: FormData
 ): Promise<TransactionFormState> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see lib/supabase/middleware.ts for details).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   if (!user) {
     redirect('/login')
@@ -65,8 +67,24 @@ export async function createTransaction(
     return { error: 'That account could not be found.' }
   }
 
+  // Category is optional, but if one was picked it must be a real category
+  // this user can actually see — categories RLS already scopes SELECT to
+  // shared defaults + this user's own, so this also rules out referencing
+  // someone else's private category.
+  if (categoryId) {
+    const { data: category, error: categoryError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('id', categoryId)
+      .single()
+
+    if (categoryError || !category) {
+      return { error: 'That category could not be found.' }
+    }
+  }
+
   const { error } = await supabase.from('transactions').insert({
-    user_id: user.id,
+    user_id: user.sub,
     account_id: accountId,
     category_id: categoryId || null,
     direction,
@@ -89,9 +107,11 @@ export async function createTransaction(
 
 export async function deleteTransaction(formData: FormData) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see lib/supabase/middleware.ts for details).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   if (!user) {
     redirect('/login')

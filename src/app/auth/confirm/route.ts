@@ -7,7 +7,12 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = searchParams.get('next') ?? '/dashboard'
+  // Only allow same-site relative paths here — `next` comes straight off the
+  // URL, and redirecting to whatever it says (including a `//host` or
+  // absolute URL) would make this endpoint an open redirect off a trusted
+  // domain, a classic phishing vector.
+  const nextParam = searchParams.get('next')
+  const next = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard'
 
   const supabase = await createClient()
 

@@ -13,9 +13,11 @@ export async function createBudget(
   formData: FormData
 ): Promise<BudgetFormState> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see lib/supabase/middleware.ts for details).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   if (!user) {
     redirect('/login')
@@ -33,8 +35,21 @@ export async function createBudget(
     return { error: 'Limit must be a positive number.' }
   }
 
+  // Categories RLS already scopes SELECT to shared defaults + this user's
+  // own, so this also confirms categoryId isn't a private category
+  // belonging to someone else before we reference it.
+  const { data: category, error: categoryError } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('id', categoryId)
+    .single()
+
+  if (categoryError || !category) {
+    return { error: 'That category could not be found.' }
+  }
+
   const { error } = await supabase.from('budgets').insert({
-    user_id: user.id,
+    user_id: user.sub,
     category_id: categoryId,
     period: 'monthly',
     limit_amount: limitAmount,
@@ -54,9 +69,11 @@ export async function createBudget(
 
 export async function deleteBudget(formData: FormData) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see lib/supabase/middleware.ts for details).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
 
   if (!user) {
     redirect('/login')

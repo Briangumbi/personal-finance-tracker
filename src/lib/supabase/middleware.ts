@@ -36,7 +36,12 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims ?? null
 
   const { pathname } = request.nextUrl
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+  // Exact match, or a "/" boundary (so /signup/check-email is still public,
+  // but a hypothetical /signup-evil route wouldn't be) — plain startsWith
+  // has no path-segment boundary and would match both.
+  const isPublicPath = PUBLIC_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`)
+  )
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
