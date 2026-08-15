@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { href: '/accounts', label: 'Accounts' },
   { href: '/transactions', label: 'Transactions' },
   { href: '/budgets', label: 'Budgets' },
+  { href: '/settings', label: 'Settings' },
 ]
 
 export function AppHeader({
