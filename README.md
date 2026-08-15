@@ -4,7 +4,7 @@ A passbook-style personal finance tracker — one line per account, first-class 
 
 ## Live demo
 
-*(add your deployed URL here once it's live — e.g. `chit.vercel.app`)*
+**[personal-finance-tracker-sigma-peach.vercel.app](https://personal-finance-tracker-sigma-peach.vercel.app)**
 
 ## Preview
 
