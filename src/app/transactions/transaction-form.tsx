@@ -22,6 +22,7 @@ export function TransactionForm({
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [counterparty, setCounterparty] = useState('')
+  const [feeAmount, setFeeAmount] = useState('')
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
 
   const [showPaste, setShowPaste] = useState(false)
@@ -56,10 +57,12 @@ export function TransactionForm({
     if (result.direction) handleDirectionChange(result.direction)
     if (result.amount !== null) setAmount(String(result.amount))
     if (result.counterparty) setCounterparty(result.counterparty)
+    if (result.feeAmount !== null) setFeeAmount(String(result.feeAmount))
 
     const parts = [
       result.amount !== null ? `amount ${result.amount}` : null,
       result.direction ? (result.direction === 'in' ? 'money in' : 'money out') : null,
+      result.feeAmount !== null ? `fee ${result.feeAmount}` : null,
       result.provider ? `via ${result.provider}` : null,
     ].filter(Boolean)
     setParseFeedback(`Detected ${parts.join(' · ')} — double-check before saving.`)
@@ -166,6 +169,27 @@ export function TransactionForm({
               className="w-full border-0 bg-transparent font-(family-name:--font-heading) text-[26px] font-semibold text-(--color-text) outline-none [font-variant-numeric:tabular-nums]"
             />
           </div>
+        </div>
+
+        <div className="field">
+          <label htmlFor="feeAmount">
+            Fee <span className="text-muted">(optional)</span>
+          </label>
+          <input
+            id="feeAmount"
+            name="feeAmount"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            value={feeAmount}
+            onChange={(e) => setFeeAmount(e.target.value)}
+            className="input"
+          />
+          <p className="mt-1 text-[11px] text-muted">
+            If this transaction had a mobile money fee, log it here instead of as a separate
+            transaction.
+          </p>
         </div>
 
         <div className="field">

@@ -21,6 +21,7 @@ type BalanceTxnRow = {
   account_id: string
   direction: 'in' | 'out'
   amount: number
+  fee_amount: number | null
 }
 
 type CategorySpendRow = {
@@ -84,13 +85,16 @@ export default async function DashboardPage() {
 
   const { data: balanceTxns } = await supabase
     .from('transactions')
-    .select('account_id, direction, amount')
+    .select('account_id, direction, amount, fee_amount')
     .returns<BalanceTxnRow[]>()
 
   const netByAccount = new Map<string, number>()
   for (const t of balanceTxns ?? []) {
     const delta = t.direction === 'in' ? t.amount : -t.amount
-    netByAccount.set(t.account_id, (netByAccount.get(t.account_id) ?? 0) + delta)
+    // A fee is always a cost taken from the wallet, regardless of whether
+    // the parent transaction was money in or out.
+    const feeDelta = -(t.fee_amount ?? 0)
+    netByAccount.set(t.account_id, (netByAccount.get(t.account_id) ?? 0) + delta + feeDelta)
   }
 
   const accountBalances = accounts.map((a) => ({

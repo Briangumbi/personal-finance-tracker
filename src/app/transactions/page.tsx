@@ -56,7 +56,7 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
   let transactionsQuery = supabase
     .from('transactions')
     .select(
-      'id, direction, amount, currency, note, counterparty, occurred_on, accounts (name), categories (name)'
+      'id, direction, amount, currency, note, counterparty, fee_amount, occurred_on, accounts (name), categories (name)'
     )
     .order('occurred_on', { ascending: false })
     .order('created_at', { ascending: false })
@@ -189,6 +189,11 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
                   <p className="text-[11px] text-muted">
                     {t.accounts?.name ?? 'Unknown account'} · {formatDate(t.occurred_on)}
                   </p>
+                  {t.fee_amount != null && (
+                    <p className="text-[11px] text-muted">
+                      Fee: {formatCurrency(t.fee_amount, t.currency)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-none items-center gap-3">
                   <span

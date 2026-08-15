@@ -27,6 +27,7 @@ export async function createTransaction(
   const amountRaw = String(formData.get('amount') ?? '')
   const note = String(formData.get('note') ?? '').trim()
   const counterparty = String(formData.get('counterparty') ?? '').trim()
+  const feeAmountRaw = String(formData.get('feeAmount') ?? '').trim()
   const occurredOn = String(formData.get('occurredOn') ?? '')
 
   if (direction !== 'in' && direction !== 'out') {
@@ -44,6 +45,14 @@ export async function createTransaction(
 
   if (!occurredOn) {
     return { error: 'Choose a date.' }
+  }
+
+  let feeAmount: number | null = null
+  if (feeAmountRaw) {
+    feeAmount = Number(feeAmountRaw)
+    if (!Number.isFinite(feeAmount) || feeAmount < 0) {
+      return { error: 'Fee must be zero or a positive number.' }
+    }
   }
 
   const { data: account, error: accountError } = await supabase
@@ -65,6 +74,7 @@ export async function createTransaction(
     currency: account.currency,
     note: note || null,
     counterparty: counterparty || null,
+    fee_amount: feeAmount,
     occurred_on: occurredOn,
   })
 

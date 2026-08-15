@@ -7,6 +7,7 @@ export type ParsedTransaction = {
   amount: number | null
   direction: 'in' | 'out' | null
   counterparty: string | null
+  feeAmount: number | null
   provider: string | null
 }
 
@@ -22,6 +23,12 @@ const SENT_RE = /\b(sent|paid|payment|withdraw(?:n|al)?|debited|purchase|bought|
 
 const FROM_RE = /\bfrom\s+([A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){0,3})/
 const TO_RE = /\bto\s+([A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){0,3})/
+
+// Fee/cost lines: "Transaction cost, Ksh33.00.", "Transaction Fee: UGX 500",
+// "Gharama ya muamala TZS 500". Provider-agnostic like the rest of this
+// file — exact wording isn't reliable enough to hard-code per provider.
+const FEE_RE =
+  /\b(?:transaction\s*cost|txn\s*cost|transaction\s*fee|service\s*fee|gharama(?:\s+ya\s+(?:matumizi|muamala))?|charges?|fee)\b[,:]?\s*(?:Ksh|KSh|KES|TSh|TZS|UGX|RWF|NGN|GHS|ZAR|USD|\$|£|€)?\s?([\d,]+(?:\.\d{1,2})?)/i
 
 type ProviderPattern = {
   name: string
@@ -60,5 +67,8 @@ export function parseTransactionText(text: string): ParsedTransaction {
   // apostrophes/hyphens/periods inside a name.
   const counterparty = rawCounterparty?.replace(/[.,]+$/, '') || null
 
-  return { amount, direction, counterparty, provider }
+  const feeMatch = text.match(FEE_RE)
+  const feeAmount = feeMatch ? Number(feeMatch[1].replace(/,/g, '')) : null
+
+  return { amount, direction, counterparty, feeAmount, provider }
 }
