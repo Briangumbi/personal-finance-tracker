@@ -34,6 +34,13 @@ export async function createBudget(
   if (!Number.isFinite(limitAmount) || limitAmount <= 0) {
     return { error: 'Limit must be a positive number.' }
   }
+  // budgets.limit_amount is numeric(14, 2) — 12 digits before the decimal
+  // point, max. Reject here with a clean message instead of letting a
+  // pasted/garbled huge number hit the database and surface a raw
+  // Postgres overflow error.
+  if (limitAmount >= 1_000_000_000_000) {
+    return { error: 'Limit is too large.' }
+  }
 
   // Categories RLS already scopes SELECT to shared defaults + this user's
   // own, so this also confirms categoryId isn't a private category

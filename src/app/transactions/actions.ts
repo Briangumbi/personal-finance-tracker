@@ -44,6 +44,13 @@ export async function createTransaction(
   if (!Number.isFinite(amount) || amount <= 0) {
     return { error: 'Amount must be a positive number.' }
   }
+  // transactions.amount is numeric(14, 2) — 12 digits before the decimal
+  // point, max. Reject here with a clean message instead of letting a
+  // pasted/garbled huge number hit the database and surface a raw
+  // Postgres overflow error.
+  if (amount >= 1_000_000_000_000) {
+    return { error: 'Amount is too large.' }
+  }
 
   if (!occurredOn) {
     return { error: 'Choose a date.' }
