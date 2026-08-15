@@ -6,7 +6,7 @@
 export type ParsedTransaction = {
   amount: number | null
   direction: 'in' | 'out' | null
-  note: string | null
+  counterparty: string | null
   provider: string | null
 }
 
@@ -60,5 +60,5 @@ export function parseTransactionText(text: string): ParsedTransaction {
   // apostrophes/hyphens/periods inside a name.
   const counterparty = rawCounterparty?.replace(/[.,]+$/, '') || null
 
-  return { amount, direction, note: counterparty, provider }
+  return { amount, direction, counterparty, provider }
 }

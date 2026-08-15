@@ -16,6 +16,7 @@ export type Transaction = {
   amount: number
   currency: string
   note: string | null
+  counterparty: string | null
   occurred_on: string
   accounts: { name: string } | null
   categories: { name: string } | null

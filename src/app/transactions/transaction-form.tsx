@@ -21,6 +21,7 @@ export function TransactionForm({
   const [direction, setDirection] = useState<'in' | 'out'>('out')
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [counterparty, setCounterparty] = useState('')
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
 
   const [showPaste, setShowPaste] = useState(false)
@@ -54,7 +55,7 @@ export function TransactionForm({
 
     if (result.direction) handleDirectionChange(result.direction)
     if (result.amount !== null) setAmount(String(result.amount))
-    if (result.note) setNote(result.note)
+    if (result.counterparty) setCounterparty(result.counterparty)
 
     const parts = [
       result.amount !== null ? `amount ${result.amount}` : null,
@@ -194,6 +195,21 @@ export function TransactionForm({
             ))}
           </div>
           <input type="hidden" name="categoryId" value={categoryId} />
+        </div>
+
+        <div className="field">
+          <label htmlFor="counterparty">
+            From / to <span className="text-muted">(optional)</span>
+          </label>
+          <input
+            id="counterparty"
+            name="counterparty"
+            type="text"
+            placeholder="e.g. JOHN KAMAU"
+            value={counterparty}
+            onChange={(e) => setCounterparty(e.target.value)}
+            className="input"
+          />
         </div>
 
         <div className="field">

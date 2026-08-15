@@ -26,6 +26,7 @@ export async function createTransaction(
   const categoryId = String(formData.get('categoryId') ?? '')
   const amountRaw = String(formData.get('amount') ?? '')
   const note = String(formData.get('note') ?? '').trim()
+  const counterparty = String(formData.get('counterparty') ?? '').trim()
   const occurredOn = String(formData.get('occurredOn') ?? '')
 
   if (direction !== 'in' && direction !== 'out') {
@@ -63,6 +64,7 @@ export async function createTransaction(
     amount,
     currency: account.currency,
     note: note || null,
+    counterparty: counterparty || null,
     occurred_on: occurredOn,
   })
 

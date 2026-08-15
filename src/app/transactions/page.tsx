@@ -56,7 +56,7 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
   let transactionsQuery = supabase
     .from('transactions')
     .select(
-      'id, direction, amount, currency, note, occurred_on, accounts (name), categories (name)'
+      'id, direction, amount, currency, note, counterparty, occurred_on, accounts (name), categories (name)'
     )
     .order('occurred_on', { ascending: false })
     .order('created_at', { ascending: false })
@@ -183,6 +183,7 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
                 <div>
                   <p className="text-[13px]">
                     {t.categories?.name ?? 'Uncategorized'}
+                    {t.counterparty ? ` · ${t.counterparty}` : ''}
                     {t.note ? ` · ${t.note}` : ''}
                   </p>
                   <p className="text-[11px] text-muted">
