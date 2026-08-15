@@ -16,6 +16,12 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
+  /* Tells the browser which palette to use for native UI it renders
+     itself — the <select> popup, scrollbars, etc. — so those don't
+     default to light chrome while our own text color is meant for
+     a dark background (or vice versa). */
+  color-scheme: light;
+
   --color-bg: #f3f2f2;
   --color-surface: #eae9e9;
   --color-text: #201f1d;
@@ -79,6 +85,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --color-bg: #1a1714;
     --color-surface: #221e19;
     --color-text: #f0ead6;
@@ -204,6 +211,11 @@ a { color: var(--color-accent); text-underline-offset: 3px; }
 .input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
 .input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
 textarea.input { min-height: 90px; resize: vertical; font-family: inherit; }
+/* <select>'s own background can't stay transparent — the dropdown
+   popup is a separate browser-drawn surface that needs a real
+   background behind our text color, in both modes. */
+select.input { background-color: var(--color-surface); }
+select.input option { background-color: var(--color-surface); color: var(--color-text); }
 .seg {
   display: inline-flex; overflow: hidden;
   border: 1px solid var(--color-divider); border-radius: var(--radius-md);
