@@ -71,6 +71,10 @@ export default function LoginPage() {
           <p className="text-center text-[11px] leading-relaxed text-muted">
             Works with mobile wallets, banks, cards and cash — one login, every currency.
           </p>
+
+          <p className="text-center text-[11px] text-muted">
+            <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>
+          </p>
         </div>
       </div>
     </div>
