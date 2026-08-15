@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import { AccountIcon } from '@/components/account-icon'
 import { BalanceRing, balanceTextSizeClass } from '@/components/balance-ring'
+import { PrivateBalance } from '@/components/private-balance'
 import type { AccountType } from '@/lib/accounts'
 import { formatCurrency } from '@/lib/currency'
 import { BASE_CURRENCY, convertToBase, getExchangeRates } from '@/lib/fx'
@@ -296,13 +297,12 @@ export default async function DashboardPage() {
               Total balance
             </span>
             {total ? (
-              <span
+              <PrivateBalance
+                formatted={formatCurrency(total.amount, total.currency)}
                 className={`font-(family-name:--font-heading) font-semibold leading-none [font-variant-numeric:tabular-nums] ${balanceTextSizeClass(
                   formatCurrency(total.amount, total.currency)
                 )}`}
-              >
-                {formatCurrency(total.amount, total.currency)}
-              </span>
+              />
             ) : (
               <span className="font-(family-name:--font-heading) text-[26px] font-semibold leading-none opacity-40">
                 &mdash;
