@@ -102,10 +102,38 @@ export default async function DashboardPage() {
     )
   }
 
-  const { data: balanceTxns } = await supabase
-    .from('transactions')
-    .select('account_id, direction, amount, fee_amount')
-    .returns<BalanceTxnRow[]>()
+  // These four reads are independent of each other — none depends on
+  // another's result — so they're batched into one round trip instead of
+  // four sequential ones, matching the pattern already used on the
+  // transactions and budgets pages.
+  const [
+    { data: balanceTxns },
+    { data: monthSpend },
+    { data: budgets },
+    { data: trendTxns },
+  ] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('account_id, direction, amount, fee_amount')
+      .returns<BalanceTxnRow[]>(),
+    supabase
+      .from('transactions')
+      .select('amount, currency, categories (name)')
+      .eq('direction', 'out')
+      .gte('occurred_on', firstOfMonthIso())
+      .returns<CategorySpendRow[]>(),
+    supabase
+      .from('budgets')
+      .select('id, limit_amount, categories (name)')
+      .eq('period', 'monthly')
+      .returns<BudgetRow[]>(),
+    supabase
+      .from('transactions')
+      .select('occurred_on, amount, currency')
+      .eq('direction', 'out')
+      .gte('occurred_on', monthsAgoFirstOfMonthIso(5))
+      .returns<TrendTxnRow[]>(),
+  ])
 
   const netByAccount = new Map<string, number>()
   for (const t of balanceTxns ?? []) {
@@ -159,13 +187,6 @@ export default async function DashboardPage() {
     }
   }
 
-  const { data: monthSpend } = await supabase
-    .from('transactions')
-    .select('amount, currency, categories (name)')
-    .eq('direction', 'out')
-    .gte('occurred_on', firstOfMonthIso())
-    .returns<CategorySpendRow[]>()
-
   const spendCurrencies = new Set((monthSpend ?? []).map((t) => t.currency))
   const spendNeedsConversion = spendCurrencies.size > 1
   const spendRates = spendNeedsConversion ? await getExchangeRates() : null
@@ -196,12 +217,6 @@ export default async function DashboardPage() {
   // never recomputes or forks it. Only "monthly" budgets exist today, and
   // spendByCategory is already scoped to the current month, so no extra
   // date filtering is needed here.
-  const { data: budgets } = await supabase
-    .from('budgets')
-    .select('id, limit_amount, categories (name)')
-    .eq('period', 'monthly')
-    .returns<BudgetRow[]>()
-
   const budgetAlerts = (budgets ?? [])
     .filter((b) => b.categories)
     .map((b) => {
@@ -217,16 +232,8 @@ export default async function DashboardPage() {
     .filter((b) => b.percent >= 80)
     .sort((a, b) => b.percent - a.percent)
 
-  // Spend trend — last 6 months, independent of the current-month query
-  // above. Same "out only" scope as spend-by-category, just grouped by
-  // month instead of category.
-  const { data: trendTxns } = await supabase
-    .from('transactions')
-    .select('occurred_on, amount, currency')
-    .eq('direction', 'out')
-    .gte('occurred_on', monthsAgoFirstOfMonthIso(5))
-    .returns<TrendTxnRow[]>()
-
+  // Spend trend — last 6 months, same "out only" scope as spend-by-category,
+  // just grouped by month instead of category.
   const trendMonths = Array.from({ length: 6 }, (_, i) => {
     const now = new Date()
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
