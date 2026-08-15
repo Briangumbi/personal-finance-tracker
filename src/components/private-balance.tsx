@@ -1,6 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+// If the tab goes inactive while the balance is revealed, give the user a
+// short grace period (e.g. a quick alt-tab) before re-blurring for privacy.
+const AUTO_REHIDE_DELAY_MS = 10_000
 
 function EyeIcon({ className }: { className?: string }) {
   return (
@@ -45,6 +49,27 @@ export function PrivateBalance({
   className: string
 }) {
   const [revealed, setRevealed] = useState(false)
+
+  useEffect(() => {
+    if (!revealed) return
+
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        timer = setTimeout(() => setRevealed(false), AUTO_REHIDE_DELAY_MS)
+      } else if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      if (timer) clearTimeout(timer)
+    }
+  }, [revealed])
 
   return (
     <span className="inline-flex items-center gap-1.5">
