@@ -104,6 +104,12 @@ export default async function AccountsPage() {
           </div>
         ))}
 
+        {!error && accounts && accounts.length === 0 && (
+          <p className="rounded-(--radius-md) border border-dashed border-(--color-divider) p-6 text-center text-sm text-muted">
+            No accounts yet — add your first one below.
+          </p>
+        )}
+
         <AddAccountToggle
           key={accounts?.length ?? 0}
           defaultOpen={!accounts || accounts.length === 0}
