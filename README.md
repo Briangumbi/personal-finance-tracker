@@ -66,3 +66,7 @@ the dashboard/history views.
 The easiest way to deploy is the [Vercel Platform](https://vercel.com/new).
 Set the same environment variables from `.env.local` in your Vercel project
 settings, and update `NEXT_PUBLIC_SITE_URL` to your production URL.
+
+## License
+
+[MIT](LICENSE)
