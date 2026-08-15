@@ -28,7 +28,7 @@ export default function DashboardError({
             <span className="text-[10px] tracking-[0.12em] uppercase opacity-55">
               Total balance
             </span>
-            <span className="font-(family-name:--font-heading) text-[26px] font-semibold opacity-40">
+            <span className="font-(family-name:--font-heading) text-[26px] font-semibold leading-none opacity-40">
               &mdash;
             </span>
           </BalanceRing>

@@ -21,7 +21,7 @@ export default function DashboardLoading() {
             <span className="text-[10px] tracking-[0.12em] uppercase text-(--color-accent-700)">
               Total balance
             </span>
-            <span className="font-(family-name:--font-heading) text-[26px] font-semibold opacity-40">
+            <span className="font-(family-name:--font-heading) text-[26px] font-semibold leading-none opacity-40">
               &middot;&middot;&middot;
             </span>
           </BalanceRing>
