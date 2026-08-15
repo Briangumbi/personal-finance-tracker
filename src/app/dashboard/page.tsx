@@ -30,9 +30,21 @@ type CategorySpendRow = {
   categories: { name: string } | null
 }
 
+type TrendTxnRow = {
+  occurred_on: string
+  amount: number
+  currency: string
+}
+
 function firstOfMonthIso() {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+function monthsAgoFirstOfMonthIso(monthsBack: number) {
+  const now = new Date()
+  const d = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 }
 
 export default async function DashboardPage() {
@@ -173,6 +185,54 @@ export default async function DashboardPage() {
   const maxSpend = spendRows[0]?.amount ?? 0
   const spendCurrencyLabel = spendNeedsConversion ? BASE_CURRENCY : [...spendCurrencies][0]
 
+  // Spend trend — last 6 months, independent of the current-month query
+  // above. Same "out only" scope as spend-by-category, just grouped by
+  // month instead of category.
+  const { data: trendTxns } = await supabase
+    .from('transactions')
+    .select('occurred_on, amount, currency')
+    .eq('direction', 'out')
+    .gte('occurred_on', monthsAgoFirstOfMonthIso(5))
+    .returns<TrendTxnRow[]>()
+
+  const trendMonths = Array.from({ length: 6 }, (_, i) => {
+    const now = new Date()
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+
+  const trendCurrencies = new Set((trendTxns ?? []).map((t) => t.currency))
+  const trendNeedsConversion = trendCurrencies.size > 1
+  const trendRates = trendNeedsConversion ? await getExchangeRates() : null
+
+  const spendByMonth = new Map<string, number>()
+  let trendSkipped = 0
+  for (const t of trendTxns ?? []) {
+    const key = t.occurred_on.slice(0, 7)
+    const value = trendNeedsConversion
+      ? trendRates
+        ? convertToBase(t.amount, t.currency, trendRates)
+        : null
+      : t.amount
+    if (value === null) {
+      trendSkipped += 1
+      continue
+    }
+    spendByMonth.set(key, (spendByMonth.get(key) ?? 0) + value)
+  }
+
+  const trendRows = trendMonths.map((key) => ({
+    key,
+    label: new Intl.DateTimeFormat(undefined, { month: 'short' }).format(
+      new Date(`${key}-01T00:00:00`)
+    ),
+    amount: spendByMonth.get(key) ?? 0,
+  }))
+  const maxTrend = Math.max(...trendRows.map((r) => r.amount), 0)
+  const trendCurrencyLabel = trendNeedsConversion
+    ? BASE_CURRENCY
+    : ([...trendCurrencies][0] ?? BASE_CURRENCY)
+
   return (
     <div className="min-h-screen bg-(--color-bg)">
       <AppHeader email={user.email ?? ''} active="/dashboard" />
@@ -233,7 +293,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="px-5 py-5">
+        <div className="border-b border-(--color-divider) px-5 py-5">
           <h6 className="mb-1 opacity-60">Spend this month</h6>
           {spendSkipped > 0 && (
             <p className="mb-2 text-[11px] text-muted">
@@ -266,6 +326,41 @@ export default async function DashboardPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="px-5 py-5">
+          <h6 className="mb-1 opacity-60">Spend trend</h6>
+          <p className="mb-3 text-[11px] text-muted">
+            Last 6 months
+            {trendNeedsConversion ? ` · converted to ${BASE_CURRENCY}` : ''}
+            {trendSkipped > 0
+              ? ` · ${trendSkipped} transaction${trendSkipped > 1 ? 's' : ''} not included`
+              : ''}
+          </p>
+          <div className="flex h-24 items-end gap-2 border-b border-(--color-divider)">
+            {trendRows.map((row) => (
+              <div key={row.key} className="flex h-full flex-1 flex-col justify-end">
+                <div
+                  className="mx-auto w-full max-w-6 rounded-t-[4px] bg-(--color-accent)"
+                  style={{
+                    height: `${
+                      maxTrend > 0 ? Math.max((row.amount / maxTrend) * 100, row.amount > 0 ? 4 : 0) : 0
+                    }%`,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-2">
+            {trendRows.map((row) => (
+              <div key={row.key} className="flex-1 text-center">
+                <p className="text-[10px] text-muted">{row.label}</p>
+                <p className="text-[10px] [font-variant-numeric:tabular-nums]">
+                  {formatCurrency(row.amount, trendCurrencyLabel)}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
