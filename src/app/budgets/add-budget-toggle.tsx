@@ -11,9 +11,13 @@ type Category = {
 export function AddBudgetToggle({
   defaultOpen,
   categories,
+  spendByCategory,
+  spendCurrencyLabel,
 }: {
   defaultOpen: boolean
   categories: Category[]
+  spendByCategory: Record<string, number>
+  spendCurrencyLabel: string
 }) {
   const [open, setOpen] = useState(defaultOpen)
 
@@ -33,7 +37,11 @@ export function AddBudgetToggle({
           Cancel
         </button>
       </div>
-      <BudgetForm categories={categories} />
+      <BudgetForm
+        categories={categories}
+        spendByCategory={spendByCategory}
+        spendCurrencyLabel={spendCurrencyLabel}
+      />
     </div>
   )
 }

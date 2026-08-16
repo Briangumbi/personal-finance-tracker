@@ -9,6 +9,7 @@ import type { AccountType } from '@/lib/accounts'
 import { formatCurrency } from '@/lib/currency'
 import { getDisplayName } from '@/lib/profile'
 import { BASE_CURRENCY, convertToBase, getExchangeRates } from '@/lib/fx'
+import { getCategorySpendThisMonth } from '@/lib/spend'
 
 type AccountRow = {
   id: string
@@ -26,12 +27,6 @@ type BalanceTxnRow = {
   fee_amount: number | null
 }
 
-type CategorySpendRow = {
-  amount: number
-  currency: string
-  categories: { name: string } | null
-}
-
 type TrendTxnRow = {
   occurred_on: string
   amount: number
@@ -42,11 +37,6 @@ type BudgetRow = {
   id: string
   limit_amount: number
   categories: { name: string } | null
-}
-
-function firstOfMonthIso() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 }
 
 function monthsAgoFirstOfMonthIso(monthsBack: number) {
@@ -113,7 +103,7 @@ export default async function DashboardPage() {
   // transactions and budgets pages.
   const [
     { data: balanceTxns },
-    { data: monthSpend },
+    categorySpend,
     { data: budgets },
     { data: trendTxns },
   ] = await Promise.all([
@@ -121,12 +111,7 @@ export default async function DashboardPage() {
       .from('transactions')
       .select('account_id, direction, amount, fee_amount')
       .returns<BalanceTxnRow[]>(),
-    supabase
-      .from('transactions')
-      .select('amount, currency, categories (name)')
-      .eq('direction', 'out')
-      .gte('occurred_on', firstOfMonthIso())
-      .returns<CategorySpendRow[]>(),
+    getCategorySpendThisMonth(supabase),
     supabase
       .from('budgets')
       .select('id, limit_amount, categories (name)')
@@ -139,6 +124,7 @@ export default async function DashboardPage() {
       .gte('occurred_on', monthsAgoFirstOfMonthIso(5))
       .returns<TrendTxnRow[]>(),
   ])
+  const { spendByCategory, currencyLabel: spendCurrencyLabel, skipped: spendSkipped } = categorySpend
 
   const netByAccount = new Map<string, number>()
   for (const t of balanceTxns ?? []) {
@@ -192,40 +178,19 @@ export default async function DashboardPage() {
     }
   }
 
-  const spendCurrencies = new Set((monthSpend ?? []).map((t) => t.currency))
-  const spendNeedsConversion = spendCurrencies.size > 1
-  const spendRates = spendNeedsConversion ? await getExchangeRates() : null
-
-  const spendByCategory = new Map<string, number>()
-  let spendSkipped = 0
-  for (const t of monthSpend ?? []) {
-    const name = t.categories?.name ?? 'Uncategorized'
-    const value = spendNeedsConversion
-      ? spendRates
-        ? convertToBase(t.amount, t.currency, spendRates)
-        : null
-      : t.amount
-    if (value === null) {
-      spendSkipped += 1
-      continue
-    }
-    spendByCategory.set(name, (spendByCategory.get(name) ?? 0) + value)
-  }
-
-  const spendRows = [...spendByCategory.entries()]
+  const spendRows = Object.entries(spendByCategory)
     .map(([name, amount]) => ({ name, amount }))
     .sort((a, b) => b.amount - a.amount)
   const maxSpend = spendRows[0]?.amount ?? 0
-  const spendCurrencyLabel = spendNeedsConversion ? BASE_CURRENCY : [...spendCurrencies][0]
 
-  // Budget alerts — reads from the spendByCategory map already built above,
-  // never recomputes or forks it. Only "monthly" budgets exist today, and
-  // spendByCategory is already scoped to the current month, so no extra
-  // date filtering is needed here.
+  // Budget alerts — reads from the spendByCategory object already built
+  // above, never recomputes or forks it. Only "monthly" budgets exist
+  // today, and spendByCategory is already scoped to the current month, so
+  // no extra date filtering is needed here.
   const budgetAlerts = (budgets ?? [])
     .filter((b) => b.categories)
     .map((b) => {
-      const spent = spendByCategory.get(b.categories!.name) ?? 0
+      const spent = spendByCategory[b.categories!.name] ?? 0
       return {
         id: b.id,
         categoryName: b.categories!.name,

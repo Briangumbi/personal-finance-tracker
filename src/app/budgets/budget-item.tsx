@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
 import { deleteBudget, updateBudget, type BudgetFormState } from './actions'
+import { formatCurrency } from '@/lib/currency'
 
 const initialState: BudgetFormState = { error: null }
 
@@ -23,12 +24,16 @@ export function BudgetItem({
   categoryName,
   limitAmount,
   availableCategories,
+  spendByCategory,
+  spendCurrencyLabel,
 }: {
   id: string
   categoryId: string
   categoryName: string
   limitAmount: number
   availableCategories: Category[]
+  spendByCategory: Record<string, number>
+  spendCurrencyLabel: string
 }) {
   const [editing, setEditing] = useState(false)
   const [state, formAction, pending] = useActionState(updateBudget, initialState)
@@ -41,6 +46,18 @@ export function BudgetItem({
     const options = [{ id: categoryId, name: categoryName }, ...availableCategories]
     return options.sort((a, b) => a.name.localeCompare(b.name))
   }, [categoryId, categoryName, availableCategories])
+
+  // Controlled (not defaultValue) so the overspend warning below can react
+  // live as the user changes either field, before they ever hit Save.
+  const [selectedCategoryId, setSelectedCategoryId] = useState(categoryId)
+  const [limitInput, setLimitInput] = useState(String(limitAmount))
+
+  const selectedCategoryName =
+    categoryOptions.find((c) => c.id === selectedCategoryId)?.name ?? categoryName
+  const spentSoFar = spendByCategory[selectedCategoryName] ?? 0
+  const enteredLimit = Number(limitInput)
+  const showOverspendWarning =
+    Number.isFinite(enteredLimit) && enteredLimit > 0 && spentSoFar > 0 && enteredLimit < spentSoFar
 
   // updateBudget doesn't redirect (it edits in place on this same list), so
   // once a pending submission finishes with no error, collapse back to
@@ -59,7 +76,8 @@ export function BudgetItem({
           <input type="hidden" name="id" value={id} />
           <select
             name="categoryId"
-            defaultValue={categoryId}
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
             className="input flex-1 py-1 text-[13px]"
           >
             {categoryOptions.map((c) => (
@@ -75,7 +93,8 @@ export function BudgetItem({
               step="0.01"
               min="0.01"
               required
-              defaultValue={limitAmount}
+              value={limitInput}
+              onChange={(e) => setLimitInput(e.target.value)}
               autoFocus
               className="input w-24 py-1 text-[13px]"
             />
@@ -91,6 +110,12 @@ export function BudgetItem({
             </button>
           </div>
         </form>
+        {showOverspendWarning && (
+          <p className="text-[11px] text-muted">
+            You&apos;ve already spent {formatCurrency(spentSoFar, spendCurrencyLabel)} in{' '}
+            {selectedCategoryName} this month — this limit would start out over budget.
+          </p>
+        )}
         {state.error && (
           <p className="text-sm text-(--color-negative)" role="alert">
             {state.error}

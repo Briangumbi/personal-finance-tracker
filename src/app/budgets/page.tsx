@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import type { Budget } from '@/lib/budgets'
 import { getDisplayName } from '@/lib/profile'
+import { getCategorySpendThisMonth } from '@/lib/spend'
 import { AddBudgetToggle } from './add-budget-toggle'
 import { BudgetItem } from './budget-item'
 
@@ -20,7 +21,7 @@ export default async function BudgetsPage() {
 
   const displayName = await getDisplayName(supabase, user)
 
-  const [{ data: budgets, error }, { data: expenseCategories }] = await Promise.all([
+  const [{ data: budgets, error }, { data: expenseCategories }, categorySpend] = await Promise.all([
     supabase
       .from('budgets')
       .select('id, limit_amount, categories (id, name)')
@@ -33,7 +34,9 @@ export default async function BudgetsPage() {
       .eq('kind', 'expense')
       .order('name', { ascending: true })
       .returns<{ id: string; name: string }[]>(),
+    getCategorySpendThisMonth(supabase),
   ])
+  const { spendByCategory, currencyLabel: spendCurrencyLabel } = categorySpend
 
   const budgetedCategoryIds = new Set((budgets ?? []).map((b) => b.categories?.id))
   const availableCategories = (expenseCategories ?? []).filter(
@@ -69,6 +72,8 @@ export default async function BudgetsPage() {
                 categoryName={b.categories?.name ?? 'Uncategorized'}
                 limitAmount={b.limit_amount}
                 availableCategories={availableCategories}
+                spendByCategory={spendByCategory}
+                spendCurrencyLabel={spendCurrencyLabel}
               />
             ))}
           </ul>
@@ -84,6 +89,8 @@ export default async function BudgetsPage() {
           key={availableCategories.length}
           defaultOpen={!budgets || budgets.length === 0}
           categories={availableCategories}
+          spendByCategory={spendByCategory}
+          spendCurrencyLabel={spendCurrencyLabel}
         />
       </div>
     </div>

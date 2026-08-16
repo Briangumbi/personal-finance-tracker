@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { createBudget, type BudgetFormState } from './actions'
+import { formatCurrency } from '@/lib/currency'
 
 type Category = {
   id: string
@@ -10,9 +11,18 @@ type Category = {
 
 const initialState: BudgetFormState = { error: null }
 
-export function BudgetForm({ categories }: { categories: Category[] }) {
+export function BudgetForm({
+  categories,
+  spendByCategory,
+  spendCurrencyLabel,
+}: {
+  categories: Category[]
+  spendByCategory: Record<string, number>
+  spendCurrencyLabel: string
+}) {
   const [state, formAction, pending] = useActionState(createBudget, initialState)
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '')
+  const [limitInput, setLimitInput] = useState('')
 
   if (categories.length === 0) {
     return (
@@ -21,6 +31,12 @@ export function BudgetForm({ categories }: { categories: Category[] }) {
       </p>
     )
   }
+
+  const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name ?? ''
+  const spentSoFar = spendByCategory[selectedCategoryName] ?? 0
+  const enteredLimit = Number(limitInput)
+  const showOverspendWarning =
+    Number.isFinite(enteredLimit) && enteredLimit > 0 && spentSoFar > 0 && enteredLimit < spentSoFar
 
   return (
     <form action={formAction} className="flex flex-col gap-3.5">
@@ -50,6 +66,8 @@ export function BudgetForm({ categories }: { categories: Category[] }) {
           step="0.01"
           min="0.01"
           required
+          value={limitInput}
+          onChange={(e) => setLimitInput(e.target.value)}
           placeholder="0.00"
           className="input"
         />
@@ -57,6 +75,12 @@ export function BudgetForm({ categories }: { categories: Category[] }) {
           Same currency as your dashboard&apos;s monthly spend total (your account
           currency, or the converted total if you hold more than one).
         </p>
+        {showOverspendWarning && (
+          <p className="mt-1 text-[11px] text-muted">
+            You&apos;ve already spent {formatCurrency(spentSoFar, spendCurrencyLabel)} in{' '}
+            {selectedCategoryName} this month — this limit would start out over budget.
+          </p>
+        )}
       </div>
 
       {state.error && (
