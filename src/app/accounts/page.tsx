@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/app-header'
 import { AccountIcon } from '@/components/account-icon'
 import { ACCOUNT_TYPES, accountTypeLabel, type Account } from '@/lib/accounts'
 import { formatCurrency } from '@/lib/currency'
+import { getDisplayName } from '@/lib/profile'
 import { deleteAccount } from './actions'
 import { AddAccountToggle } from './add-account-toggle'
 
@@ -26,6 +27,8 @@ export default async function AccountsPage() {
     redirect('/login')
   }
 
+  const displayName = await getDisplayName(supabase, user)
+
   const { data: accounts, error } = await supabase
     .from('accounts')
     .select('id, name, type, provider, currency, starting_balance, created_at')
@@ -40,7 +43,7 @@ export default async function AccountsPage() {
 
   return (
     <div className="min-h-screen bg-(--color-bg)">
-      <AppHeader email={user.email ?? ''} active="/accounts" />
+      <AppHeader displayName={displayName} active="/accounts" />
 
       <div className="mx-auto max-w-2xl space-y-6 px-5 py-8">
         <div>

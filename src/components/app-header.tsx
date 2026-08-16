@@ -10,10 +10,10 @@ const NAV_LINKS = [
 ]
 
 export function AppHeader({
-  email,
+  displayName,
   active,
 }: {
-  email: string
+  displayName: string
   active: string
 }) {
   return (
@@ -32,7 +32,7 @@ export function AppHeader({
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3">
-          <span className="hidden text-xs text-muted sm:inline">{email}</span>
+          <span className="hidden text-xs text-muted sm:inline">{displayName}</span>
           <form action={logout}>
             <button type="submit" className="btn btn-secondary">
               Log out

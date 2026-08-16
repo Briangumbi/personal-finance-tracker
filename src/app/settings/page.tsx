@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
+import { getDisplayName } from '@/lib/profile'
 import { DeleteAccountForm } from './delete-account-form'
 
 export default async function SettingsPage() {
@@ -16,9 +17,11 @@ export default async function SettingsPage() {
     redirect('/login')
   }
 
+  const displayName = await getDisplayName(supabase, user)
+
   return (
     <div className="min-h-screen bg-(--color-bg)">
-      <AppHeader email={user.email ?? ''} active="/settings" />
+      <AppHeader displayName={displayName} active="/settings" />
 
       <div className="mx-auto max-w-2xl space-y-6 px-5 py-8">
         <div>

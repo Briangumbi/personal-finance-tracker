@@ -34,6 +34,22 @@ export default function SignupPage() {
 
           <form action={formAction} className="flex flex-col gap-4">
             <div className="field">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                minLength={3}
+                maxLength={20}
+                pattern="[a-zA-Z0-9_]+"
+                autoComplete="username"
+                placeholder="e.g. brian_g"
+                className="input"
+              />
+            </div>
+
+            <div className="field">
               <label htmlFor="email">Email</label>
               <input
                 id="email"

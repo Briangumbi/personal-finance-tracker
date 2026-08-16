@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import type { Budget } from '@/lib/budgets'
+import { getDisplayName } from '@/lib/profile'
 import { AddBudgetToggle } from './add-budget-toggle'
 import { BudgetItem } from './budget-item'
 
@@ -16,6 +17,8 @@ export default async function BudgetsPage() {
   if (!user) {
     redirect('/login')
   }
+
+  const displayName = await getDisplayName(supabase, user)
 
   const [{ data: budgets, error }, { data: expenseCategories }] = await Promise.all([
     supabase
@@ -39,7 +42,7 @@ export default async function BudgetsPage() {
 
   return (
     <div className="min-h-screen bg-(--color-bg)">
-      <AppHeader email={user.email ?? ''} active="/budgets" />
+      <AppHeader displayName={displayName} active="/budgets" />
 
       <div className="mx-auto max-w-2xl space-y-6 px-5 py-8">
         <div>

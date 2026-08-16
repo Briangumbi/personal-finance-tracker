@@ -7,6 +7,7 @@ import { BalanceRing, balanceTextSizeClass } from '@/components/balance-ring'
 import { PrivateBalance } from '@/components/private-balance'
 import type { AccountType } from '@/lib/accounts'
 import { formatCurrency } from '@/lib/currency'
+import { getDisplayName } from '@/lib/profile'
 import { BASE_CURRENCY, convertToBase, getExchangeRates } from '@/lib/fx'
 
 type AccountRow = {
@@ -66,6 +67,8 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
+  const displayName = await getDisplayName(supabase, user)
+
   const { data: accounts } = await supabase
     .from('accounts')
     .select('id, name, type, provider, currency, starting_balance')
@@ -75,7 +78,7 @@ export default async function DashboardPage() {
   if (!accounts || accounts.length === 0) {
     return (
       <div className="min-h-screen bg-(--color-bg)">
-        <AppHeader email={user.email ?? ''} active="/dashboard" />
+        <AppHeader displayName={displayName} active="/dashboard" />
         <div className="mx-auto max-w-2xl px-4 py-10">
           <div className="flex flex-col items-center gap-2.5 rounded-(--radius-lg) border border-(--color-divider) bg-(--color-surface) px-6 py-10 text-center">
             <svg
@@ -276,7 +279,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-(--color-bg)">
-      <AppHeader email={user.email ?? ''} active="/dashboard" />
+      <AppHeader displayName={displayName} active="/dashboard" />
 
       <div className="mx-auto flex max-w-2xl flex-col">
         {budgetAlerts.length > 0 && (

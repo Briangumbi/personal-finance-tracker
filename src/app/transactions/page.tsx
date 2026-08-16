@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import type { Category, Transaction, TransactionAccount } from '@/lib/transactions'
 import { formatCurrency } from '@/lib/currency'
+import { getDisplayName } from '@/lib/profile'
 import { deleteTransaction } from './actions'
 import { TransactionForm } from './transaction-form'
 
@@ -55,6 +56,8 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
     redirect('/login')
   }
 
+  const displayName = await getDisplayName(supabase, user)
+
   let transactionsQuery = supabase
     .from('transactions')
     .select(
@@ -88,7 +91,7 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
 
   return (
     <div className="min-h-screen bg-(--color-bg)">
-      <AppHeader email={user.email ?? ''} active="/transactions" />
+      <AppHeader displayName={displayName} active="/transactions" />
 
       <div className="mx-auto max-w-2xl space-y-6 px-5 py-8">
         <div>

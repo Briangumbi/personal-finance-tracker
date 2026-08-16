@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import type { Category, TransactionAccount } from '@/lib/transactions'
+import { getDisplayName } from '@/lib/profile'
 import { TransactionForm, type EditableTransaction } from '../../transaction-form'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -19,6 +20,8 @@ export default async function EditTransactionPage(props: PageProps<'/transaction
   if (!user) {
     redirect('/login')
   }
+
+  const displayName = await getDisplayName(supabase, user)
 
   // A malformed id or one that doesn't exist / isn't owned by this user
   // (RLS already scopes the SELECT) both end up here with no row — just
@@ -52,7 +55,7 @@ export default async function EditTransactionPage(props: PageProps<'/transaction
 
   return (
     <div className="min-h-screen bg-(--color-bg)">
-      <AppHeader email={user.email ?? ''} active="/transactions" />
+      <AppHeader displayName={displayName} active="/transactions" />
 
       <div className="mx-auto max-w-2xl space-y-6 px-5 py-8">
         <div>
