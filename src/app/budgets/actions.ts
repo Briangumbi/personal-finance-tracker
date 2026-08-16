@@ -95,10 +95,15 @@ export async function updateBudget(
   }
 
   const id = String(formData.get('id') ?? '')
+  const categoryId = String(formData.get('categoryId') ?? '')
   const limitAmountRaw = String(formData.get('limitAmount') ?? '')
 
   if (!id) {
     return { error: 'That budget could not be found.' }
+  }
+
+  if (!categoryId) {
+    return { error: 'Choose a category.' }
   }
 
   const limitAmount = Number(limitAmountRaw)
@@ -113,17 +118,34 @@ export async function updateBudget(
     return { error: 'Limit is too large.' }
   }
 
-  // Only the limit amount is editable — the category is part of the unique
-  // key (one budget per category), so changing it is a delete-and-recreate,
-  // not an update. No explicit user_id check needed here either — the RLS
-  // update policy already scopes this to rows the caller owns, same as
-  // deleteBudget below.
+  // Categories RLS already scopes SELECT to shared defaults + this user's
+  // own, so this also confirms categoryId isn't a private category
+  // belonging to someone else before we reference it — same check
+  // createBudget does.
+  const { data: category, error: categoryError } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('id', categoryId)
+    .single()
+
+  if (categoryError || !category) {
+    return { error: 'That category could not be found.' }
+  }
+
+  // No explicit user_id check needed — the RLS update policy already scopes
+  // this to rows the caller owns, same as deleteBudget below. Always
+  // updates both fields together; if categoryId is unchanged from this
+  // budget's current one, the unique constraint below simply doesn't fire
+  // (it only conflicts with a *different* budget row).
   const { error } = await supabase
     .from('budgets')
-    .update({ limit_amount: limitAmount })
+    .update({ category_id: categoryId, limit_amount: limitAmount })
     .eq('id', id)
 
   if (error) {
+    if (error.code === '23505') {
+      return { error: 'That category already has a budget.' }
+    }
     return { error: error.message }
   }
 

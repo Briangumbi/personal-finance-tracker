@@ -1,9 +1,11 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState } from 'react'
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
 import { deleteBudget, updateBudget, type BudgetFormState } from './actions'
 
 const initialState: BudgetFormState = { error: null }
+
+type Category = { id: string; name: string }
 
 // Budgets deliberately don't track a currency (see migration notes) — a
 // plain number, not formatCurrency, since there's no currency code to
@@ -17,16 +19,28 @@ function formatLimit(amount: number) {
 
 export function BudgetItem({
   id,
+  categoryId,
   categoryName,
   limitAmount,
+  availableCategories,
 }: {
   id: string
+  categoryId: string
   categoryName: string
   limitAmount: number
+  availableCategories: Category[]
 }) {
   const [editing, setEditing] = useState(false)
   const [state, formAction, pending] = useActionState(updateBudget, initialState)
   const wasPending = useRef(false)
+
+  // This budget's own category plus every category not yet budgeted by any
+  // other budget — so keeping the current one is always a valid, preselected
+  // option, not just the newly-available ones.
+  const categoryOptions = useMemo(() => {
+    const options = [{ id: categoryId, name: categoryName }, ...availableCategories]
+    return options.sort((a, b) => a.name.localeCompare(b.name))
+  }, [categoryId, categoryName, availableCategories])
 
   // updateBudget doesn't redirect (it edits in place on this same list), so
   // once a pending submission finishes with no error, collapse back to
@@ -43,7 +57,17 @@ export function BudgetItem({
       <li className="flex flex-col gap-2 border-b border-(--color-divider) py-3 last:border-b-0">
         <form action={formAction} className="flex items-center justify-between gap-3">
           <input type="hidden" name="id" value={id} />
-          <p className="text-[13px]">{categoryName}</p>
+          <select
+            name="categoryId"
+            defaultValue={categoryId}
+            className="input flex-1 py-1 text-[13px]"
+          >
+            {categoryOptions.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
           <div className="flex flex-none items-center gap-2">
             <input
               name="limitAmount"

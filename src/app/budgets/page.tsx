@@ -65,8 +65,10 @@ export default async function BudgetsPage() {
               <BudgetItem
                 key={b.id}
                 id={b.id}
+                categoryId={b.categories?.id ?? ''}
                 categoryName={b.categories?.name ?? 'Uncategorized'}
                 limitAmount={b.limit_amount}
+                availableCategories={availableCategories}
               />
             ))}
           </ul>
