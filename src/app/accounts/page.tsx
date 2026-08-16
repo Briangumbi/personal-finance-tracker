@@ -6,6 +6,7 @@ import { AccountIcon } from '@/components/account-icon'
 import { ACCOUNT_TYPES, accountTypeLabel, type Account } from '@/lib/accounts'
 import { formatCurrency } from '@/lib/currency'
 import { getDisplayName } from '@/lib/profile'
+import { getCountryProviders } from '@/lib/bank-providers'
 import { deleteAccount } from './actions'
 import { AddAccountToggle } from './add-account-toggle'
 
@@ -28,6 +29,7 @@ export default async function AccountsPage() {
   }
 
   const displayName = await getDisplayName(supabase, user)
+  const providers = await getCountryProviders(supabase, user.sub)
 
   const { data: accounts, error } = await supabase
     .from('accounts')
@@ -125,6 +127,7 @@ export default async function AccountsPage() {
         <AddAccountToggle
           key={accounts?.length ?? 0}
           defaultOpen={!accounts || accounts.length === 0}
+          providers={providers}
         />
       </div>
     </div>

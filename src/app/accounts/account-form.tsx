@@ -1,24 +1,58 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useMemo, useState } from 'react'
 import { createAccount, updateAccount, type AccountFormState } from './actions'
-import { ACCOUNT_TYPES, CURRENCIES, MOBILE_MONEY_PROVIDERS, type Account } from '@/lib/accounts'
+import { ACCOUNT_TYPES, CURRENCIES, type Account } from '@/lib/accounts'
+import type { BankProvider } from '@/lib/bank-providers'
 
 const initialState: AccountFormState = { error: null }
 
-export function AccountForm({ account }: { account?: Account }) {
+const PROVIDER_TYPE_ORDER = ['bank', 'mobile_money', 'card_network'] as const
+const PROVIDER_TYPE_LABELS: Record<BankProvider['provider_type'], string> = {
+  bank: 'Banks',
+  mobile_money: 'Mobile Money',
+  card_network: 'Card Networks',
+}
+
+export function AccountForm({
+  account,
+  providers,
+}: {
+  account?: Account
+  providers: BankProvider[]
+}) {
   const [state, formAction, pending] = useActionState(
     account ? updateAccount : createAccount,
     initialState
   )
   const [type, setType] = useState<string>(account?.type ?? 'bank')
-  const [provider, setProvider] = useState<string>(
-    account?.provider && (MOBILE_MONEY_PROVIDERS as readonly string[]).includes(account.provider)
-      ? account.provider
-      : account?.provider
-        ? 'Other'
-        : MOBILE_MONEY_PROVIDERS[0]
+
+  const hasCountryProviders = providers.length > 0
+  const knownProviderNames = useMemo(
+    () => new Set(providers.map((p) => p.provider_name)),
+    [providers]
   )
+  const groupedProviders = useMemo(() => {
+    const groups: Record<BankProvider['provider_type'], BankProvider[]> = {
+      bank: [],
+      mobile_money: [],
+      card_network: [],
+    }
+    for (const p of providers) groups[p.provider_type].push(p)
+    return groups
+  }, [providers])
+
+  // Country-suggested dropdown: preselects a known provider, falls back to
+  // "Other" if the account has a provider that isn't in the list, or blank
+  // if there's nothing to preselect yet. No country data at all: this
+  // holds the plain free-text value instead, no dropdown involved.
+  const [provider, setProvider] = useState<string>(() => {
+    if (!hasCountryProviders) return account?.provider ?? ''
+    if (account?.provider && knownProviderNames.has(account.provider)) return account.provider
+    if (account?.provider) return 'Other'
+    return ''
+  })
+
   const [currency, setCurrency] = useState<string>(
     (CURRENCIES as readonly string[]).includes(account?.currency ?? '')
       ? (account?.currency as string)
@@ -27,8 +61,11 @@ export function AccountForm({ account }: { account?: Account }) {
         : CURRENCIES[0]
   )
 
-  const isMobileMoney = type === 'mobile_money'
-  const isOtherProvider = provider === 'Other'
+  // Provider is relevant for bank/card/mobile_money, not cash/other. Only
+  // mobile_money requires one — bank/card can leave it blank.
+  const showProviderField = type === 'bank' || type === 'card' || type === 'mobile_money'
+  const providerRequired = type === 'mobile_money'
+  const isOtherProvider = hasCountryProviders && provider === 'Other'
   const isOtherCurrency = currency === 'Other'
 
   return (
@@ -64,35 +101,63 @@ export function AccountForm({ account }: { account?: Account }) {
         </select>
       </div>
 
-      {isMobileMoney && (
+      {showProviderField && (
         <div className="field">
-          <label htmlFor="provider">Provider</label>
-          <select
-            id="provider"
-            name="provider"
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            className="input"
-          >
-            {MOBILE_MONEY_PROVIDERS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          {isOtherProvider && (
+          <label htmlFor="provider">
+            Provider{' '}
+            {!providerRequired && <span className="text-muted">(optional)</span>}
+          </label>
+          {hasCountryProviders ? (
+            <>
+              <select
+                id="provider"
+                name="provider"
+                required={providerRequired}
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                className="input"
+              >
+                <option value="" disabled>
+                  Select a provider
+                </option>
+                {PROVIDER_TYPE_ORDER.map((t) =>
+                  groupedProviders[t].length > 0 ? (
+                    <optgroup key={t} label={PROVIDER_TYPE_LABELS[t]}>
+                      {groupedProviders[t].map((p) => (
+                        <option key={p.id} value={p.provider_name}>
+                          {p.provider_name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null
+                )}
+                <option value="Other">Other</option>
+              </select>
+              {isOtherProvider && (
+                <input
+                  name="providerOther"
+                  type="text"
+                  required
+                  defaultValue={
+                    account?.provider && !knownProviderNames.has(account.provider)
+                      ? account.provider
+                      : undefined
+                  }
+                  placeholder="Provider name"
+                  className="input mt-2"
+                />
+              )}
+            </>
+          ) : (
             <input
-              name="providerOther"
+              id="provider"
+              name="provider"
               type="text"
-              required
-              defaultValue={
-                account?.provider &&
-                !(MOBILE_MONEY_PROVIDERS as readonly string[]).includes(account.provider)
-                  ? account.provider
-                  : undefined
-              }
-              placeholder="Provider name"
-              className="input mt-2"
+              required={providerRequired}
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+              placeholder="e.g. CRDB, Chase, M-Pesa"
+              className="input"
             />
           )}
         </div>

@@ -2,8 +2,15 @@
 
 import { useState } from 'react'
 import { AccountForm } from './account-form'
+import type { BankProvider } from '@/lib/bank-providers'
 
-export function AddAccountToggle({ defaultOpen }: { defaultOpen: boolean }) {
+export function AddAccountToggle({
+  defaultOpen,
+  providers,
+}: {
+  defaultOpen: boolean
+  providers: BankProvider[]
+}) {
   const [open, setOpen] = useState(defaultOpen)
 
   if (!open) {
@@ -22,7 +29,7 @@ export function AddAccountToggle({ defaultOpen }: { defaultOpen: boolean }) {
           Cancel
         </button>
       </div>
-      <AccountForm />
+      <AccountForm providers={providers} />
     </div>
   )
 }

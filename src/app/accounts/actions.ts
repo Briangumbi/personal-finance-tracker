@@ -47,12 +47,14 @@ export async function createAccount(
     return { error: 'Choose a valid account type.' }
   }
 
-  const provider =
-    type === 'mobile_money'
-      ? providerSelect === 'Other'
-        ? providerOther
-        : providerSelect
-      : null
+  // Provider applies to bank/card/mobile_money (not cash/other), sourced
+  // either from a country-suggested dropdown (providerSelect, with
+  // providerOther used when "Other" is picked) or, when the user has no
+  // country-specific suggestions, straight free text in providerSelect
+  // itself — either way it lands in the same "provider" form field, so
+  // this line handles both UI shapes uniformly. Only mobile_money requires
+  // one; bank/card leave it null if left blank.
+  const provider = (providerSelect === 'Other' ? providerOther : providerSelect) || null
 
   if (type === 'mobile_money' && !provider) {
     return { error: 'Provider is required for mobile money accounts.' }
@@ -125,12 +127,14 @@ export async function updateAccount(
     return { error: 'Choose a valid account type.' }
   }
 
-  const provider =
-    type === 'mobile_money'
-      ? providerSelect === 'Other'
-        ? providerOther
-        : providerSelect
-      : null
+  // Provider applies to bank/card/mobile_money (not cash/other), sourced
+  // either from a country-suggested dropdown (providerSelect, with
+  // providerOther used when "Other" is picked) or, when the user has no
+  // country-specific suggestions, straight free text in providerSelect
+  // itself — either way it lands in the same "provider" form field, so
+  // this line handles both UI shapes uniformly. Only mobile_money requires
+  // one; bank/card leave it null if left blank.
+  const provider = (providerSelect === 'Other' ? providerOther : providerSelect) || null
 
   if (type === 'mobile_money' && !provider) {
     return { error: 'Provider is required for mobile money accounts.' }

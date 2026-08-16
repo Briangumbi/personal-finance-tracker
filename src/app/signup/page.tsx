@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { signup } from './actions'
 import type { AuthFormState } from '@/app/login/actions'
 import { ChitMark } from '@/components/chit-mark'
+import { COUNTRIES } from '@/lib/countries'
 
 const initialState: AuthFormState = { error: null }
 
@@ -47,6 +48,27 @@ export default function SignupPage() {
                 placeholder="e.g. brian_g"
                 className="input"
               />
+            </div>
+
+            <div className="field">
+              <label htmlFor="countryCode">Country</label>
+              <select
+                id="countryCode"
+                name="countryCode"
+                required
+                defaultValue=""
+                autoComplete="country"
+                className="input"
+              >
+                <option value="" disabled>
+                  Select a country
+                </option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="field">

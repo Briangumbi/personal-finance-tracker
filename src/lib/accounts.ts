@@ -12,22 +12,6 @@ export function accountTypeLabel(type: string) {
   return ACCOUNT_TYPES.find((t) => t.value === type)?.label ?? type
 }
 
-// Common East African mobile money providers first, since that's the
-// underserved case most finance apps ignore, then a broader set of global
-// wallet providers. "Other" always falls through to free text.
-export const MOBILE_MONEY_PROVIDERS = [
-  'M-Pesa',
-  'Tigo Pesa',
-  'Airtel Money',
-  'Halopesa',
-  'Selcom',
-  'MTN MoMo',
-  'GCash',
-  'PayPal',
-  'Venmo',
-  'Other',
-] as const
-
 export const CURRENCIES = [
   'USD',
   'EUR',

@@ -3,15 +3,18 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { COUNTRIES } from '@/lib/countries'
 import type { AuthFormState } from '@/app/login/actions'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
+const VALID_COUNTRY_CODES = new Set(COUNTRIES.map((c) => c.code))
 
 export async function signup(
   _prevState: AuthFormState,
   formData: FormData
 ): Promise<AuthFormState> {
   const username = String(formData.get('username') ?? '').trim()
+  const countryCode = String(formData.get('countryCode') ?? '').trim()
   const email = String(formData.get('email') ?? '')
   const password = String(formData.get('password') ?? '')
   const confirmPassword = String(formData.get('confirmPassword') ?? '')
@@ -20,6 +23,10 @@ export async function signup(
     return {
       error: 'Username must be 3-20 characters: letters, numbers, or underscore.',
     }
+  }
+
+  if (!VALID_COUNTRY_CODES.has(countryCode)) {
+    return { error: 'Choose a country from the list.' }
   }
 
   if (password !== confirmPassword) {
@@ -38,7 +45,7 @@ export async function signup(
     password,
     options: {
       emailRedirectTo: `${siteUrl}/auth/confirm`,
-      data: { username },
+      data: { username, country_code: countryCode },
     },
   })
 
@@ -54,7 +61,7 @@ export async function signup(
     const admin = createAdminClient()
     const { error: profileError } = await admin
       .from('profiles')
-      .insert({ user_id: data.user.id, username })
+      .insert({ user_id: data.user.id, username, country_code: countryCode })
 
     if (profileError) {
       if (profileError.code === '23505') {

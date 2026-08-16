@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import type { Account } from '@/lib/accounts'
 import { getDisplayName } from '@/lib/profile'
+import { getCountryProviders } from '@/lib/bank-providers'
 import { AccountForm } from '../../account-form'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -22,6 +23,7 @@ export default async function EditAccountPage(props: PageProps<'/accounts/[id]/e
   }
 
   const displayName = await getDisplayName(supabase, user)
+  const providers = await getCountryProviders(supabase, user.sub)
 
   // A malformed id or one that doesn't exist / isn't owned by this user
   // (RLS already scopes the SELECT) both end up here with no row — just
@@ -52,7 +54,7 @@ export default async function EditAccountPage(props: PageProps<'/accounts/[id]/e
         </div>
 
         <div className="rounded-(--radius-md) border border-(--color-divider) p-4.5">
-          <AccountForm account={account} />
+          <AccountForm account={account} providers={providers} />
         </div>
       </div>
     </div>
