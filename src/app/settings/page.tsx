@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import { getDisplayName } from '@/lib/profile'
 import { DeleteAccountForm } from './delete-account-form'
+import { UsernameForm } from './username-form'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -18,6 +19,11 @@ export default async function SettingsPage() {
   }
 
   const displayName = await getDisplayName(supabase, user)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('user_id', user.sub)
+    .single()
 
   return (
     <div className="min-h-screen bg-(--color-bg)">
@@ -27,6 +33,10 @@ export default async function SettingsPage() {
         <div>
           <h2>Settings</h2>
           <p className="text-sm text-muted">Signed in as {user.email}</p>
+        </div>
+
+        <div className="rounded-(--radius-md) border border-(--color-divider) p-4.5">
+          <UsernameForm currentUsername={profile?.username ?? null} />
         </div>
 
         <div className="flex flex-col gap-3.5 rounded-(--radius-md) border border-(--color-negative) p-4.5">
