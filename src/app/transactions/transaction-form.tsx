@@ -1,29 +1,45 @@
 'use client'
 
 import { useActionState, useMemo, useState } from 'react'
-import { createTransaction, type TransactionFormState } from './actions'
+import { createTransaction, updateTransaction, type TransactionFormState } from './actions'
 import { todayIsoDate, type Category, type TransactionAccount } from '@/lib/transactions'
 import { parseTransactionText } from '@/lib/sms-parser'
 
 const initialState: TransactionFormState = { error: null }
 
+export type EditableTransaction = {
+  id: string
+  direction: 'in' | 'out'
+  amount: number
+  note: string | null
+  counterparty: string | null
+  fee_amount: number | null
+  occurred_on: string
+  account_id: string
+  category_id: string | null
+}
+
 export function TransactionForm({
   accounts,
   categories,
+  transaction,
 }: {
   accounts: TransactionAccount[]
   categories: Category[]
+  transaction?: EditableTransaction
 }) {
   const [state, formAction, pending] = useActionState(
-    createTransaction,
+    transaction ? updateTransaction : createTransaction,
     initialState
   )
-  const [direction, setDirection] = useState<'in' | 'out'>('out')
-  const [amount, setAmount] = useState('')
-  const [note, setNote] = useState('')
-  const [counterparty, setCounterparty] = useState('')
-  const [feeAmount, setFeeAmount] = useState('')
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
+  const [direction, setDirection] = useState<'in' | 'out'>(transaction?.direction ?? 'out')
+  const [amount, setAmount] = useState(transaction ? String(transaction.amount) : '')
+  const [note, setNote] = useState(transaction?.note ?? '')
+  const [counterparty, setCounterparty] = useState(transaction?.counterparty ?? '')
+  const [feeAmount, setFeeAmount] = useState(
+    transaction?.fee_amount != null ? String(transaction.fee_amount) : ''
+  )
+  const [accountId, setAccountId] = useState(transaction?.account_id ?? accounts[0]?.id ?? '')
 
   const [showPaste, setShowPaste] = useState(false)
   const [smsText, setSmsText] = useState('')
@@ -34,7 +50,9 @@ export function TransactionForm({
       categories.filter((c) => c.kind === (direction === 'in' ? 'income' : 'expense')),
     [categories, direction]
   )
-  const [categoryId, setCategoryId] = useState(filteredCategories[0]?.id ?? '')
+  const [categoryId, setCategoryId] = useState(
+    transaction?.category_id ?? filteredCategories[0]?.id ?? ''
+  )
 
   function handleDirectionChange(next: 'in' | 'out') {
     setDirection(next)
@@ -70,43 +88,46 @@ export function TransactionForm({
 
   return (
     <div className="flex flex-col gap-4.5">
-      <div className="flex flex-col gap-2 border-t border-(--color-divider) pt-3.5">
-        <button
-          type="button"
-          onClick={() => setShowPaste((v) => !v)}
-          className="self-start text-xs text-muted"
-        >
-          {showPaste ? '− Paste SMS or notification' : '+ Paste SMS or notification (optional)'}
-        </button>
+      {!transaction && (
+        <div className="flex flex-col gap-2 border-t border-(--color-divider) pt-3.5">
+          <button
+            type="button"
+            onClick={() => setShowPaste((v) => !v)}
+            className="self-start text-xs text-muted"
+          >
+            {showPaste ? '− Paste SMS or notification' : '+ Paste SMS or notification (optional)'}
+          </button>
 
-        {showPaste && (
-          <div className="flex flex-col gap-2">
-            <textarea
-              value={smsText}
-              onChange={(e) => setSmsText(e.target.value)}
-              rows={3}
-              placeholder="Paste a mobile money confirmation message here…"
-              className="input font-mono text-[11.5px]"
-            />
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted">
-                We&apos;ll prefill the amount and direction — you confirm the rest.
-              </span>
-              <button
-                type="button"
-                onClick={handleParse}
-                disabled={!smsText.trim()}
-                className="btn btn-ghost flex-none disabled:opacity-45"
-              >
-                Parse
-              </button>
+          {showPaste && (
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={smsText}
+                onChange={(e) => setSmsText(e.target.value)}
+                rows={3}
+                placeholder="Paste a mobile money confirmation message here…"
+                className="input font-mono text-[11.5px]"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted">
+                  We&apos;ll prefill the amount and direction — you confirm the rest.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleParse}
+                  disabled={!smsText.trim()}
+                  className="btn btn-ghost flex-none disabled:opacity-45"
+                >
+                  Parse
+                </button>
+              </div>
+              {parseFeedback && <p className="text-[11px] text-muted">{parseFeedback}</p>}
             </div>
-            {parseFeedback && <p className="text-[11px] text-muted">{parseFeedback}</p>}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <form action={formAction} className="flex flex-col gap-4.5">
+        {transaction && <input type="hidden" name="id" value={transaction.id} />}
         <div className="seg w-full">
           <label className="seg-opt flex-1 justify-center gap-1.5">
             <input
@@ -199,7 +220,7 @@ export function TransactionForm({
             name="occurredOn"
             type="date"
             required
-            defaultValue={todayIsoDate()}
+            defaultValue={transaction?.occurred_on ?? todayIsoDate()}
             className="input"
           />
         </div>
@@ -258,7 +279,11 @@ export function TransactionForm({
         )}
 
         <button type="submit" disabled={pending} className="btn btn-primary btn-block">
-          {pending ? 'Saving…' : 'Save entry'}
+          {pending
+            ? 'Saving…'
+            : transaction
+              ? 'Save changes'
+              : 'Save entry'}
         </button>
       </form>
     </div>

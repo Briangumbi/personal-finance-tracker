@@ -206,6 +206,12 @@ export default async function TransactionsPage(props: PageProps<'/transactions'>
                     {t.direction === 'in' ? '+' : '−'}
                     {formatCurrency(t.amount, t.currency)}
                   </span>
+                  <Link
+                    href={`/transactions/${t.id}/edit`}
+                    className="text-[11px] text-muted hover:text-(--color-text)"
+                  >
+                    Edit
+                  </Link>
                   <form action={deleteTransaction}>
                     <input type="hidden" name="id" value={t.id} />
                     <button
