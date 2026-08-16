@@ -79,6 +79,59 @@ export async function createBudget(
   redirect('/budgets')
 }
 
+export async function updateBudget(
+  _prevState: BudgetFormState,
+  formData: FormData
+): Promise<BudgetFormState> {
+  const supabase = await createClient()
+  // getClaims() verifies the JWT locally against Supabase's cached JWKS
+  // instead of a network round trip to the Auth server on every request
+  // (see lib/supabase/middleware.ts for details).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims ?? null
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const id = String(formData.get('id') ?? '')
+  const limitAmountRaw = String(formData.get('limitAmount') ?? '')
+
+  if (!id) {
+    return { error: 'That budget could not be found.' }
+  }
+
+  const limitAmount = Number(limitAmountRaw)
+  if (!Number.isFinite(limitAmount) || limitAmount <= 0) {
+    return { error: 'Limit must be a positive number.' }
+  }
+  // budgets.limit_amount is numeric(14, 2) — 12 digits before the decimal
+  // point, max. Reject here with a clean message instead of letting a
+  // pasted/garbled huge number hit the database and surface a raw
+  // Postgres overflow error.
+  if (limitAmount >= 1_000_000_000_000) {
+    return { error: 'Limit is too large.' }
+  }
+
+  // Only the limit amount is editable — the category is part of the unique
+  // key (one budget per category), so changing it is a delete-and-recreate,
+  // not an update. No explicit user_id check needed here either — the RLS
+  // update policy already scopes this to rows the caller owns, same as
+  // deleteBudget below.
+  const { error } = await supabase
+    .from('budgets')
+    .update({ limit_amount: limitAmount })
+    .eq('id', id)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/budgets')
+  revalidatePath('/dashboard')
+  return { error: null }
+}
+
 export async function deleteBudget(formData: FormData) {
   const supabase = await createClient()
   // getClaims() verifies the JWT locally against Supabase's cached JWKS

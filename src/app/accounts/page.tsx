@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
@@ -71,6 +72,12 @@ export default async function AccountsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <AccountIcon type={account.type} size={20} className="text-(--color-accent-700)" />
+                      <Link
+                        href={`/accounts/${account.id}/edit`}
+                        className="text-[11px] text-muted hover:text-(--color-text)"
+                      >
+                        Edit
+                      </Link>
                       <form action={deleteAccount}>
                         <input type="hidden" name="id" value={account.id} />
                         <button

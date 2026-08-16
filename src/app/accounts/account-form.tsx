@@ -1,16 +1,31 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { createAccount, type AccountFormState } from './actions'
-import { ACCOUNT_TYPES, CURRENCIES, MOBILE_MONEY_PROVIDERS } from '@/lib/accounts'
+import { createAccount, updateAccount, type AccountFormState } from './actions'
+import { ACCOUNT_TYPES, CURRENCIES, MOBILE_MONEY_PROVIDERS, type Account } from '@/lib/accounts'
 
 const initialState: AccountFormState = { error: null }
 
-export function AccountForm() {
-  const [state, formAction, pending] = useActionState(createAccount, initialState)
-  const [type, setType] = useState<string>('bank')
-  const [provider, setProvider] = useState<string>(MOBILE_MONEY_PROVIDERS[0])
-  const [currency, setCurrency] = useState<string>(CURRENCIES[0])
+export function AccountForm({ account }: { account?: Account }) {
+  const [state, formAction, pending] = useActionState(
+    account ? updateAccount : createAccount,
+    initialState
+  )
+  const [type, setType] = useState<string>(account?.type ?? 'bank')
+  const [provider, setProvider] = useState<string>(
+    account?.provider && (MOBILE_MONEY_PROVIDERS as readonly string[]).includes(account.provider)
+      ? account.provider
+      : account?.provider
+        ? 'Other'
+        : MOBILE_MONEY_PROVIDERS[0]
+  )
+  const [currency, setCurrency] = useState<string>(
+    (CURRENCIES as readonly string[]).includes(account?.currency ?? '')
+      ? (account?.currency as string)
+      : account?.currency
+        ? 'Other'
+        : CURRENCIES[0]
+  )
 
   const isMobileMoney = type === 'mobile_money'
   const isOtherProvider = provider === 'Other'
@@ -18,6 +33,7 @@ export function AccountForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-3.5">
+      {account && <input type="hidden" name="id" value={account.id} />}
       <div className="field">
         <label htmlFor="name">Account name</label>
         <input
@@ -25,6 +41,7 @@ export function AccountForm() {
           name="name"
           type="text"
           required
+          defaultValue={account?.name}
           placeholder="e.g. Everyday M-Pesa, NBC Checking"
           className="input"
         />
@@ -68,6 +85,12 @@ export function AccountForm() {
               name="providerOther"
               type="text"
               required
+              defaultValue={
+                account?.provider &&
+                !(MOBILE_MONEY_PROVIDERS as readonly string[]).includes(account.provider)
+                  ? account.provider
+                  : undefined
+              }
               placeholder="Provider name"
               className="input mt-2"
             />
@@ -97,6 +120,11 @@ export function AccountForm() {
               type="text"
               required
               maxLength={3}
+              defaultValue={
+                account?.currency && !(CURRENCIES as readonly string[]).includes(account.currency)
+                  ? account.currency
+                  : undefined
+              }
               placeholder="e.g. XOF"
               className="input mt-2 uppercase"
             />
@@ -110,7 +138,7 @@ export function AccountForm() {
             name="startingBalance"
             type="number"
             step="0.01"
-            defaultValue="0"
+            defaultValue={account?.starting_balance ?? 0}
             className="input"
           />
         </div>
@@ -123,7 +151,7 @@ export function AccountForm() {
       )}
 
       <button type="submit" disabled={pending} className="btn btn-primary btn-block">
-        {pending ? 'Saving…' : 'Save account'}
+        {pending ? 'Saving…' : account ? 'Save changes' : 'Save account'}
       </button>
     </form>
   )
