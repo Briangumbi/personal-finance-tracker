@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isRateLimited } from '@/lib/rate-limit'
 
 export type BudgetFormState = {
   error: string | null
@@ -21,6 +22,10 @@ export async function createBudget(
 
   if (!user) {
     redirect('/login')
+  }
+
+  if (await isRateLimited(supabase, 'budgets', user.sub)) {
+    return { error: 'Too many budgets created in a short time. Please wait a moment and try again.' }
   }
 
   const categoryId = String(formData.get('categoryId') ?? '')

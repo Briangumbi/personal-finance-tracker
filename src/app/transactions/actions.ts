@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isRateLimited } from '@/lib/rate-limit'
 
 export type TransactionFormState = {
   error: string | null
@@ -21,6 +22,10 @@ export async function createTransaction(
 
   if (!user) {
     redirect('/login')
+  }
+
+  if (await isRateLimited(supabase, 'transactions', user.sub)) {
+    return { error: 'Too many transactions logged in a short time. Please wait a moment and try again.' }
   }
 
   const accountId = String(formData.get('accountId') ?? '')

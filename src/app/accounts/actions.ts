@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ACCOUNT_TYPES } from '@/lib/accounts'
+import { isRateLimited } from '@/lib/rate-limit'
 
 export type AccountFormState = {
   error: string | null
@@ -24,6 +25,10 @@ export async function createAccount(
 
   if (!user) {
     redirect('/login')
+  }
+
+  if (await isRateLimited(supabase, 'accounts', user.sub)) {
+    return { error: 'Too many accounts created in a short time. Please wait a moment and try again.' }
   }
 
   const name = String(formData.get('name') ?? '').trim()
